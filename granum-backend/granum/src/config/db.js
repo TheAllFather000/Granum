@@ -4,6 +4,14 @@ let poolConfig;
 
 if (process.env.DATABASE_URL) {
   poolConfig = { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } };
+} else if (process.env.POSTGRES_HOST) {
+  poolConfig = {
+    host: process.env.POSTGRES_HOST,
+    port: parseInt(process.env.POSTGRES_PORT || '5432'),
+    database: process.env.POSTGRES_DB || process.env.DB_NAME || 'linkhive',
+    user: process.env.POSTGRES_USER || process.env.DB_USER || 'linkhive',
+    password: process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || 'linkhive_secret',
+  };
 } else {
   poolConfig = {
     host:     process.env.DB_HOST     || 'localhost',
@@ -12,6 +20,10 @@ if (process.env.DATABASE_URL) {
     user:     process.env.DB_USER     || 'linkhive',
     password: process.env.DB_PASSWORD || 'linkhive_secret',
   };
+}
+
+if (process.env.RAILWAY_PRIVATE_DOMAIN) {
+  poolConfig.host = process.env.RAILWAY_PRIVATE_DOMAIN;
 }
 
 poolConfig.max = 20;
