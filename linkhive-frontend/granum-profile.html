@@ -916,9 +916,8 @@
       console.log('[Profile] User from granumAuth:', user);
       console.log('[Profile] User phone:', user?.phone);
       const balance = data.voucher_balance_cents ? data.voucher_balance_cents / 100 : (data.voucher_balance || 0);
-      el.textContent = user?.phone ? `R${balance.toFixed(2)}` : 'Not logged in';
-      const el = document.getElementById('voucher-balance-display');
-      el.textContent = `R${balance.toFixed(2)}`;
+      const balanceEl = document.getElementById('voucher-balance-display');
+      balanceEl.textContent = user?.phone ? `R${balance.toFixed(2)}` : 'Not logged in';
       card.style.display = 'block';
       el.innerHTML += ' <button onclick="loadVoucherBalance()" style="font-size:10px;padding:2px 6px;margin-left:8px">🔄</button>';
       console.log('[Profile] Voucher balance shown:', balance);
