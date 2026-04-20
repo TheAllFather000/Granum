@@ -51,7 +51,7 @@ services:
       DB_PORT:       5432
       REDIS_HOST:    redis
       REDIS_PORT:    6379
-      CORS_ORIGIN:   "http://localhost:*"
+      CORS_ORIGIN:   "*"
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:
