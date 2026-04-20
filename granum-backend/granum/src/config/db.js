@@ -22,10 +22,6 @@ if (process.env.DATABASE_URL) {
   };
 }
 
-if (process.env.RAILWAY_PRIVATE_DOMAIN) {
-  poolConfig.host = process.env.RAILWAY_PRIVATE_DOMAIN;
-}
-
 poolConfig.max = 20;
 poolConfig.idleTimeoutMillis = 30_000;
 poolConfig.connectionTimeoutMillis = 5_000;
