@@ -909,22 +909,28 @@
     
     try {
       const res = await window.granumAuth.apiFetch('/fsm/voucher-balance?_t=' + Date.now());
-      console.log('[Profile] Voucher balance response status:', res.status);
+      if (!res.ok) {
+        console.log('[Profile] Voucher balance error:', res.status);
+        return;
+      }
       const data = await res.json();
       console.log('[Profile] Voucher balance response:', data);
       const user = window.granumAuth?.getUser?.();
-      console.log('[Profile] User from granumAuth:', user);
       console.log('[Profile] User phone:', user?.phone);
-      const balance = data.voucher_balance_cents ? data.voucher_balance_cents / 100 : (data.voucher_balance || 0);
+      const balance = data.voucher_balance_cents || 0;
       const balanceEl = document.getElementById('voucher-balance-display');
-      balanceEl.textContent = user?.phone ? `R${balance.toFixed(2)}` : 'Not logged in';
+      balanceEl.textContent = 'R' + (balance / 100).toFixed(2);
       card.style.display = 'block';
-      el.innerHTML += ' <button onclick="loadVoucherBalance()" style="font-size:10px;padding:2px 6px;margin-left:8px">🔄</button>';
       console.log('[Profile] Voucher balance shown:', balance);
     } catch (err) {
       console.error('[Profile] Voucher balance error:', err);
       card.style.display = 'none';
     }
+    // Also load on page show
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') loadVoucherBalance();
+    });
+    el.innerHTML += ' <button onclick="loadVoucherBalance()" style="font-size:10px;padding:2px 6px;margin-left:8px">🔄</button>';
   }
 
   function renderRealProducts(products) {
