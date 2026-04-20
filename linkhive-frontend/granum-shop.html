@@ -951,8 +951,16 @@ function convertProfileToCard(p) {
       
       const API_URL = window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
       
+      console.log('[Shop] Fetching from:', API_URL);
+      
       // Fetch all profiles from /fsm endpoint
-      const profilesRes = await fetch(`${API_URL}/fsm/profiles?limit=50`);
+      const profilesRes = await fetch(`${API_URL}/fsm/profiles?limit=50`, {
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!profilesRes.ok) {
+        throw new Error(`HTTP ${profilesRes.status}: ${profilesRes.statusText}`);
+      }
       const profilesData = await profilesRes.json();
       
       if (profilesData.profiles) {
@@ -968,7 +976,13 @@ function convertProfileToCard(p) {
       }
       
       // Fetch all products
-      const productsRes = await fetch(`${API_URL}/fsm/products?limit=100`);
+      const productsRes = await fetch(`${API_URL}/fsm/products?limit=100`, {
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!productsRes.ok) {
+        throw new Error(`HTTP ${productsRes.status}: ${productsRes.statusText}`);
+      }
       const productsData = await productsRes.json();
       
       if (productsData.products) {
