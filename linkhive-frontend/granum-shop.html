@@ -949,6 +949,8 @@ function convertProfileToCard(p) {
     try {
       if (debugEl) debugEl.textContent = 'Loading...';
       
+      const API = window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
+      
       // Fetch all profiles from /fsm endpoint
       const profilesRes = await fetch(`${API}/fsm/profiles?limit=50`);
       const profilesData = await profilesRes.json();
@@ -1016,8 +1018,8 @@ function renderAll() {
     
     row.innerHTML = products.map(p => `
       <div class="entity-card product-card" onclick="openQtyModal('${p.id}')">
-        <div class="card-thumb farmer-bg">
-          <span style="font-size:40px">${p.emoji || '📦'}</span>
+        <div class="card-thumb farmer-bg" style="background-image: url('${p.image_url || ''}'); background-size: cover; background-position: center;">
+          ${!p.image_url ? `<span style="font-size:40px">${p.emoji || '📦'}</span>` : ''}
         </div>
         <div class="card-body">
           <div class="card-name">${p.name}</div>
