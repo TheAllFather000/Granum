@@ -954,9 +954,13 @@ function convertProfileToCard(p) {
       console.log('[Shop] Fetching from:', API_URL);
       
       // Fetch all profiles from /fsm endpoint
-      const profilesRes = await fetch(`${API_URL}/fsm/profiles?limit=50`, {
+      const profilesRes = await fetch(`${API_URL}/fsm/profiles?limit=50&_t=${Date.now()}`, {
         mode: 'cors',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
       if (!profilesRes.ok) {
         throw new Error(`HTTP ${profilesRes.status}: ${profilesRes.statusText}`);
@@ -976,9 +980,13 @@ function convertProfileToCard(p) {
       }
       
       // Fetch all products
-      const productsRes = await fetch(`${API_URL}/fsm/products?limit=100`, {
+      const productsRes = await fetch(`${API_URL}/fsm/products?limit=100&_t=${Date.now()}`, {
         mode: 'cors',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
       if (!productsRes.ok) {
         throw new Error(`HTTP ${productsRes.status}: ${productsRes.statusText}`);
