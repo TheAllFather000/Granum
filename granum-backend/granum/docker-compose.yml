@@ -47,10 +47,11 @@ services:
     env_file: .env
     environment:
       NODE_ENV:      ${NODE_ENV:-development}
-      DATABASE_URL:  ${DATABASE_URL}
+      DB_HOST:       db
+      DB_PORT:       5432
       REDIS_HOST:    redis
       REDIS_PORT:    6379
-      CORS_ORIGIN:   "*"
+      CORS_ORIGIN:   "https://theallfather000.github.io,https://theallfather000.github.io/Granum,http://localhost:5500"
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:
