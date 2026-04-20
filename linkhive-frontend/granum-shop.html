@@ -956,7 +956,8 @@ function convertProfileToCard(p) {
       // Fetch all profiles from /fsm endpoint
       const profilesRes = await fetch(`${API_URL}/fsm/profiles?limit=50`, {
         method: 'GET',
-        mode: 'cors'
+        mode: 'cors',
+        headers: { 'ngrok-skip-browser-warning': 'true' }
       });
       if (!profilesRes.ok) {
         throw new Error(`HTTP ${profilesRes.status}: ${profilesRes.statusText}`);
@@ -978,7 +979,8 @@ function convertProfileToCard(p) {
       // Fetch all products
       const productsRes = await fetch(`${API_URL}/fsm/products?limit=100`, {
         method: 'GET',
-        mode: 'cors'
+        mode: 'cors',
+        headers: { 'ngrok-skip-browser-warning': 'true' }
       });
       if (!productsRes.ok) {
         throw new Error(`HTTP ${productsRes.status}: ${productsRes.statusText}`);

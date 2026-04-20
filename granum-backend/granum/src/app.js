@@ -24,7 +24,7 @@ const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()
 const corsOptions = {
   origin: corsOrigins.includes('*') ? true : corsOrigins.length > 0 ? corsOrigins : ['http://localhost:5500', 'http://127.0.0.1:5500'],
   methods:     ['GET','POST','PATCH','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization','Cache-Control','Pragma'],
+  allowedHeaders: ['Content-Type','Authorization','Cache-Control','Pragma','ngrok-skip-browser-warning'],
   credentials: true,
 };
 app.use(cors(corsOptions));
