@@ -11,7 +11,7 @@
  */
 
 (function () {
-  const API = window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'http://localhost:3000';
+  const API = window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
 
   const KEYS = {
     access:  'granum_access_token',
