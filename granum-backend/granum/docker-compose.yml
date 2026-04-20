@@ -11,11 +11,12 @@ services:
       POSTGRES_DB:       ${DB_NAME:-linkhive}
       POSTGRES_USER:     ${DB_USER:-linkhive}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-linkhive_secret}
+    command: postgres -c listen_addresses='*'
     volumes:
       - linkhive_postgres_data:/var/lib/postgresql/data
       - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "0.0.0.0:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-linkhive}"]
       interval: 10s
@@ -46,10 +47,10 @@ services:
     env_file: .env
     environment:
       NODE_ENV:      ${NODE_ENV:-development}
-      DB_HOST:       db
-      DB_PORT:       5432
+      DATABASE_URL:  ${DATABASE_URL}
       REDIS_HOST:    redis
       REDIS_PORT:    6379
+      CORS_ORIGIN:   "*"
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:
