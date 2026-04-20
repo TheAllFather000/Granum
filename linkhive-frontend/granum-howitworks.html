@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — How It Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --green:#4A6B3C; --green-dark:#3A552E; --green-light:#EAF3DE;
+      --brown:#8B6946; --brown-light:#F5EDE0;
+      --cream:#FDFAF6; --card:#F2EEE7;
+      --text:#2E2C28; --muted:#7A776F;
+      --white:#FFFFFF;
+      --border:rgba(60,55,45,0.11); --border-mid:rgba(60,55,45,0.2);
+    }
+    html { scroll-behavior:smooth; }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); overflow-x:hidden; }
+
+    /* ── reveal ──────────────────────────────────────────────── */
+    .reveal       { opacity:0; transform:translateY(22px); transition:opacity .6s ease,transform .6s ease; }
+    .reveal-left  { opacity:0; transform:translateX(-26px); transition:opacity .6s ease,transform .6s ease; }
+    .reveal-right { opacity:0; transform:translateX(26px);  transition:opacity .6s ease,transform .6s ease; }
+    .reveal.up,.reveal-left.up,.reveal-right.up { opacity:1; transform:none; }
+
+    /* ── shared ──────────────────────────────────────────────── */
+    .eyebrow { display:inline-block; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--brown); margin-bottom:.9rem; }
+    .section-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3.5vw,2.6rem); font-weight:900; letter-spacing:-.5px; line-height:1.1; }
+    .section-title em { color:var(--green); font-style:normal; }
+    .section-sub { font-size:15px; color:var(--muted); line-height:1.75; margin-top:.5rem; max-width:560px; }
+
+    /* ── hero ────────────────────────────────────────────────── */
+    .hero {
+      padding:4rem 5vw 5rem;
+      display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center;
+      border-bottom:1px solid var(--border);
+    }
+    .hero-right { display:flex; flex-direction:column; gap:1rem; }
+    .quick-stat {
+      background:var(--white); border:1px solid var(--border); border-radius:14px;
+      padding:1.2rem 1.4rem; display:flex; align-items:center; gap:1rem;
+      transition:transform .22s;
+    }
+    .quick-stat:hover { transform:translateX(4px); }
+    .qs-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .qs-icon.g { background:var(--green-light); }
+    .qs-icon.b { background:var(--brown-light); }
+    .qs-icon.s { background:#EEF0FA; }
+    .qs-body h4 { font-size:15px; font-weight:700; color:var(--text); }
+    .qs-body p  { font-size:12px; color:var(--muted); margin-top:2px; line-height:1.4; }
+
+    /* ── audience tabs ───────────────────────────────────────── */
+    .audience-section { padding:5rem 5vw; }
+    .audience-tabs {
+      display:flex; gap:10px; margin-bottom:3rem; flex-wrap:wrap;
+    }
+    .aud-tab {
+      background:var(--white); border:1.5px solid var(--border-mid);
+      border-radius:12px; padding:10px 20px;
+      font-size:14px; font-weight:600; color:var(--muted);
+      cursor:pointer; font-family:'DM Sans',sans-serif;
+      transition:all .18s; display:flex; align-items:center; gap:7px;
+    }
+    .aud-tab:hover { border-color:var(--green); color:var(--green); }
+    .aud-tab.active { background:var(--green); color:white; border-color:var(--green); }
+    .aud-panel { display:none; }
+    .aud-panel.active { display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:start; }
+
+    /* steps */
+    .steps-list { display:flex; flex-direction:column; }
+    .step-item {
+      display:flex; gap:1.2rem; padding:1.4rem 0;
+      border-bottom:1px solid var(--border); cursor:default;
+      transition:all .2s;
+    }
+    .step-item:last-child { border-bottom:none; }
+    .step-item:hover .step-bubble { background:var(--green); }
+    .step-item:hover .step-bubble span { color:white; }
+    .step-bubble {
+      width:40px; height:40px; border-radius:50%; flex-shrink:0;
+      background:var(--green-light);
+      display:flex; align-items:center; justify-content:center;
+      transition:background .2s;
+    }
+    .step-bubble span { font-family:'Playfair Display',serif; font-size:15px; font-weight:700; color:var(--green); transition:color .2s; }
+    .step-content h3 { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; }
+    .step-content p  { font-size:13px; color:var(--muted); line-height:1.65; }
+    .step-tag { display:inline-block; background:var(--green-light); color:var(--green-dark); font-size:10px; font-weight:700; padding:2px 8px; border-radius:5px; margin-top:5px; }
+
+    /* panel right — visual card stack */
+    .panel-visual { display:flex; flex-direction:column; gap:10px; position:sticky; top:80px; }
+    .visual-card {
+      background:var(--white); border:1px solid var(--border);
+      border-radius:16px; padding:1.2rem 1.3rem;
+      display:flex; align-items:center; gap:12px;
+      opacity:0; transform:translateY(12px);
+      transition:opacity .4s ease, transform .4s ease;
+    }
+    .visual-card.show { opacity:1; transform:none; }
+    .vc-icon { width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; background:var(--green-light); }
+    .vc-text h4 { font-size:13px; font-weight:600; color:var(--text); }
+    .vc-text p  { font-size:12px; color:var(--muted); margin-top:2px; }
+    .vc-check { margin-left:auto; color:var(--green); font-size:18px; flex-shrink:0; }
+
+    /* ── fee breakdown ───────────────────────────────────────── */
+    .fees-section { padding:5rem 5vw; background:var(--card); }
+    .fees-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; margin-top:2.5rem; }
+    .fee-card {
+      background:var(--white); border:1px solid var(--border);
+      border-radius:16px; padding:1.6rem; position:relative; overflow:hidden;
+    }
+    .fee-card::before { content:''; position:absolute; top:-20px; right:-20px; width:80px; height:80px; border-radius:50%; opacity:.06; background:var(--green); }
+    .fee-who { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:.6rem; }
+    .fee-amount { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:900; color:var(--green); line-height:1; margin-bottom:.4rem; }
+    .fee-amount.free { color:var(--brown); }
+    .fee-card h3 { font-size:15px; font-weight:600; color:var(--text); margin-bottom:.5rem; }
+    .fee-card p  { font-size:13px; color:var(--muted); line-height:1.65; }
+    .fee-list { margin-top:.8rem; display:flex; flex-direction:column; gap:5px; }
+    .fee-list li { font-size:12px; color:var(--muted); display:flex; align-items:flex-start; gap:6px; list-style:none; }
+    .fee-list li::before { content:'✓'; color:var(--green); font-weight:700; flex-shrink:0; margin-top:1px; }
+
+    /* ── faq ─────────────────────────────────────────────────── */
+    .faq-section { padding:5rem 5vw; }
+    .faq-cols { display:grid; grid-template-columns:1fr 1fr; gap:3rem; margin-top:2.5rem; }
+    .faq-item { border-bottom:1px solid var(--border); }
+    .faq-q {
+      width:100%; background:none; border:none;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:1rem 0; text-align:left; gap:12px;
+      font-size:14px; font-weight:600; color:var(--text);
+      cursor:pointer; font-family:'DM Sans',sans-serif;
+    }
+    .faq-chevron { flex-shrink:0; color:var(--muted); transition:transform .22s; font-size:12px; }
+    .faq-item.open .faq-chevron { transform:rotate(180deg); }
+    .faq-a { font-size:13px; color:var(--muted); line-height:1.7; max-height:0; overflow:hidden; transition:max-height .28s ease,padding .2s; }
+    .faq-item.open .faq-a { max-height:220px; padding-bottom:.9rem; }
+
+    /* ── cta ─────────────────────────────────────────────────── */
+    .cta-section { background:var(--green); padding:5rem 5vw; text-align:center; }
+    .cta-section h2 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3.5vw,2.6rem); font-weight:900; color:white; letter-spacing:-.5px; margin-bottom:.8rem; }
+    .cta-section p  { color:rgba(255,255,255,.8); font-size:15px; max-width:480px; margin:0 auto 2rem; line-height:1.7; }
+    .cta-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .btn-white { background:white; color:var(--green); border:none; border-radius:11px; padding:13px 26px; font-size:15px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s; text-decoration:none; display:inline-flex; align-items:center; gap:7px; }
+    .btn-white:hover { background:var(--cream); transform:translateY(-2px); }
+    .btn-ghost { background:rgba(255,255,255,.12); color:white; border:1.5px solid rgba(255,255,255,.25); border-radius:11px; padding:12px 26px; font-size:15px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s; text-decoration:none; display:inline-flex; align-items:center; gap:7px; }
+    .btn-ghost:hover { background:rgba(255,255,255,.22); }
+
+    /* ── footer ──────────────────────────────────────────────── */
+    footer { background:var(--text); color:rgba(255,255,255,.7); padding:3.5rem 5vw 1.5rem; }
+    .footer-main { display:grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr; gap:2.5rem; max-width:1200px; margin:0 auto 2rem; }
+    .footer-brand { display:flex; flex-direction:column; gap:1rem; }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:white; text-decoration:none; }
+    .footer-logo span { color:var(--brown); }
+    .footer-tagline { font-size:14px; line-height:1.5; color:rgba(255,255,255,.5); }
+    .footer-social { display:flex; gap:12px; }
+    .footer-social a { font-size:22px; text-decoration:none; transition:transform .2s; }
+    .footer-social a:hover { transform:scale(1.15); }
+    .footer-col { display:flex; flex-direction:column; gap:10px; }
+    .footer-col h4 { color:white; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .footer-col a { color:rgba(255,255,255,.55); font-size:13px; text-decoration:none; transition:color .2s; }
+    .footer-col a:hover { color:white; }
+    .footer-newsletter p { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:10px; }
+    .newsletter-form { display:flex; gap:8px; }
+    .newsletter-form input { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:10px 12px; font-size:13px; color:white; }
+    .newsletter-form input::placeholder { color:rgba(255,255,255,.35); }
+    .newsletter-form button { background:var(--green); color:white; border:none; border-radius:8px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+    .newsletter-form button:hover { background:var(--green-dark); }
+    .footer-bottom { border-top:1px solid rgba(255,255,255,.1); padding-top:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; max-width:1200px; margin:0 auto; }
+    .footer-bottom p { font-size:12px; color:rgba(255,255,255,.4); }
+    .footer-legal { display:flex; gap:1.5rem; }
+    .footer-legal a { font-size:12px; color:rgba(255,255,255,.4); text-decoration:none; transition:color .2s; }
+    .footer-legal a:hover { color:white; }
+    @media(max-width:900px) { .footer-main { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column:span 2; } }
+    @media(max-width:580px) { .footer-main { grid-template-columns: 1fr; } .footer-brand { grid-column:span 1; } }
+
+    /* ── toast ───────────────────────────────────────────────── */
+    .toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(12px); background:var(--text); color:white; padding:11px 20px; border-radius:10px; font-size:13px; font-weight:500; z-index:600; opacity:0; transition:all .28s; pointer-events:none; white-space:nowrap; max-width:90vw; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    @media(max-width:860px) { .hero{grid-template-columns:1fr;gap:2.5rem} .aud-panel.active{grid-template-columns:1fr} .faq-cols{grid-template-columns:1fr} footer{grid-template-columns:1fr} }
+    @media(max-width:600px) { .audience-tabs{gap:7px} .aud-tab{font-size:13px;padding:8px 14px} }
+  </style>
+</head>
+<body>
+
+<!-- hero -->
+<section class="hero">
+  <div class="reveal-left">
+    <span class="eyebrow">The simple version</span>
+    <h1 class="section-title">Three people.<br>One <em>direct line.</em></h1>
+    <p class="section-sub">Granum removes everyone standing between a farmer's field and a spaza shelf. Less handling, fresher food, fairer prices — for everyone in the chain.</p>
+  </div>
+  <div class="hero-right reveal-right">
+    <div class="quick-stat">
+      <div class="qs-icon g">👨🏾‍🌾</div>
+      <div class="qs-body"><h4>Farmer lists a product</h4><p>Sets their own price. No wholesaler markup. No negotiation.</p></div>
+    </div>
+    <div class="quick-stat">
+      <div class="qs-icon s">🔗</div>
+      <div class="qs-body"><h4>Granum connects the dots</h4><p>Handles logistics, verification, payments, and delivery routing.</p></div>
+    </div>
+    <div class="quick-stat">
+      <div class="qs-icon b">🏪</div>
+      <div class="qs-body"><h4>Spaza owner stocks their shelves</h4><p>At prices below wholesale — delivered within 24 hours.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- audience steps -->
+<section class="audience-section">
+  <div class="reveal" style="max-width:560px">
+    <span class="eyebrow">Step by step</span>
+    <h2 class="section-title">How it works <em>for you</em></h2>
+    <p class="section-sub">Select your role below to see exactly what the process looks like from your side.</p>
+  </div>
+  <div class="audience-tabs" style="margin-top:2rem">
+    <button class="aud-tab active" onclick="switchAud('spaza',this)">🏪 Spaza shop owner</button>
+    <button class="aud-tab" onclick="switchAud('farmer',this)">👨🏾‍🌾 Farmer / supplier</button>
+    <button class="aud-tab" onclick="switchAud('driver',this)">🚚 Delivery driver</button>
+  </div>
+
+  <!-- SPAZA -->
+  <div class="aud-panel active" id="aud-spaza">
+    <div class="steps-list">
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>1</span></div>
+        <div class="step-content">
+          <h3>Create your free account</h3>
+          <p>Sign up with your phone number. No email required, no long forms. We verify your spaza shop address during onboarding.</p>
+          <span class="step-tag">Free forever</span>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>2</span></div>
+        <div class="step-content">
+          <h3>Browse local suppliers</h3>
+          <p>Filter by province and area. See verified farmers and manufacturers near you with live stock and pricing.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>3</span></div>
+        <div class="step-content">
+          <h3>Add to basket — no minimums</h3>
+          <p>Order exactly what you need. 1kg or 50kg — it's your call. Bulk discounts apply automatically when you go bigger.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>4</span></div>
+        <div class="step-content">
+          <h3>Choose your payment method</h3>
+          <p>Pay by card, EFT, cash on delivery, SnapScan, or redeem a Granum community voucher.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>5</span></div>
+        <div class="step-content">
+          <h3>Delivered to your door</h3>
+          <p>A local driver picks up directly from the supplier and delivers to your spaza. You get an SMS when it's on the way.</p>
+          <span class="step-tag">Within 24 hours</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel-visual" id="visual-spaza">
+      <div class="visual-card"><div class="vc-icon">📱</div><div class="vc-text"><h4>Order from your phone</h4><p>Mobile-first design — works on any smartphone, any signal.</p></div><div class="vc-check">✓</div></div>
+      <div class="visual-card"><div class="vc-icon">💸</div><div class="vc-text"><h4>18% cheaper on average</h4><p>Than buying from a traditional wholesaler.</p></div><div class="vc-check">✓</div></div>
+      <div class="visual-card"><div class="vc-icon">🔁</div><div class="vc-text"><h4>One-tap reorder</h4><p>Your order history is saved — restock your regulars in seconds.</p></div><div class="vc-check">✓</div></div>
+      <div class="visual-card"><div class="vc-icon">🎟️</div><div class="vc-text"><h4>Accept community vouchers</h4><p>Customers can pay with Granum Pay It Forward vouchers.</p></div><div class="vc-check">✓</div></div>
+    </div>
+  </div>
+
+  <!-- FARMER -->
+  <div class="aud-panel" id="aud-farmer">
+    <div class="steps-list">
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>1</span></div>
+        <div class="step-content">
+          <h3>Apply to join as a supplier</h3>
+          <p>Fill in a short form with your farm details and what you produce. Our team verifies you within 3 business days.</p>
+          <span class="step-tag">Free to list</span>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>2</span></div>
+        <div class="step-content">
+          <h3>List your products</h3>
+          <p>Set your own prices, upload photos, write a short description. You decide how much you sell and at what price.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>3</span></div>
+        <div class="step-content">
+          <h3>Receive orders via SMS</h3>
+          <p>When a spaza shop orders your product, you get an instant SMS. Accept or decline within 2 hours.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>4</span></div>
+        <div class="step-content">
+          <h3>Pack and hand over to the driver</h3>
+          <p>A Granum delivery driver collects from your farm or drop point. No need to travel — they come to you.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>5</span></div>
+        <div class="step-content">
+          <h3>Get paid within 24 hours</h3>
+          <p>Payment lands in your account within 24 hours of confirmed delivery. You keep 95% — we take 5%.</p>
+          <span class="step-tag">95% to you always</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel-visual" id="visual-farmer">
+      <div class="visual-card"><div class="vc-icon">🌍</div><div class="vc-text"><h4>Reach 340+ spaza shops</h4><p>Your products visible to every shop on the platform from day one.</p></div><div class="vc-check">✓</div></div>
+      <div class="visual-card"><div class="vc-icon">💰</div><div class="vc-text"><h4>You set the price</h4><p>No wholesale negotiation. Your price is your price.</p></div><div class="vc-check">✓</div></div>
+      <div class="visual-card"><div class="vc-icon">📊</div><div class="vc-text"><h4>Sales dashboard</h4><p>See your orders, revenue, and top-selling products at a glance.</p></div><div class="vc-check">✓</div></div>
+    </div>
+  </div>
+
+  <!-- DRIVER -->
+  <div class="aud-panel" id="aud-driver">
+    <div class="steps-list">
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>1</span></div>
+        <div class="step-content">
+          <h3>Sign up as a delivery partner</h3>
+          <p>Register with your ID, vehicle details, and preferred delivery area. Background check takes 48 hours.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>2</span></div>
+        <div class="step-content">
+          <h3>Accept delivery jobs on the app</h3>
+          <p>Browse available deliveries near you. Accept what fits your schedule — no fixed hours, no minimum shifts.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>3</span></div>
+        <div class="step-content">
+          <h3>Collect from the supplier</h3>
+          <p>Navigate to the farm or warehouse. The supplier has your order ready to go — you scan and confirm pickup.</p>
+        </div>
+      </div>
+      <div class="step-item reveal">
+        <div class="step-bubble"><span>4</span></div>
+        <div class="step-content">
+          <h3>Deliver to the spaza shop</h3>
+          <p>GPS navigation guides you to the delivery address. Get the shop owner to confirm receipt on your phone.</p>
+          <span class="step-tag">Earn per delivery</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel-visual" id="visual-driver">
+      <div class="visual-card"><div class="vc-icon">⏰</div><div class="vc-text"><h4>Flexible hours</h4><p>Work when you want. No minimum commitment, no penalty for offline time.</p></div><div class="vc-check">✓</div></div>
+      <div class="visual-card"><div class="vc-icon">📍</div><div class="vc-text"><h4>Stay in your area</h4><p>Filter deliveries by distance. Never drive further than you're comfortable with.</p></div><div class="vc-check">✓</div></div>
+      <div class="visual-card"><div class="vc-icon">💳</div><div class="vc-text"><h4>Weekly payouts</h4><p>Earnings paid every Friday via EFT directly to your bank account.</p></div><div class="vc-check">✓</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- fees -->
+<section class="fees-section">
+  <div class="reveal" style="max-width:540px">
+    <span class="eyebrow">Transparent pricing</span>
+    <h2 class="section-title">What does <em>Granum cost?</em></h2>
+    <p class="section-sub">Short answer: almost nothing. We make money when suppliers make money — not before.</p>
+  </div>
+  <div class="fees-grid">
+    <div class="fee-card reveal">
+      <div class="fee-who">For spaza shop owners</div>
+      <div class="fee-amount free">R0</div>
+      <h3>Free to use. Always.</h3>
+      <p>Browsing, ordering, and managing your account costs nothing. You pay only for the products you order — at the listed price.</p>
+      <ul class="fee-list">
+        <li>No subscription fee</li>
+        <li>No listing fee</li>
+        <li>No transaction fee</li>
+        <li>Delivery charged at R25 flat per order</li>
+      </ul>
+    </div>
+    <div class="fee-card reveal">
+      <div class="fee-who">For farmers & manufacturers</div>
+      <div class="fee-amount">5%</div>
+      <h3>Commission per sale only.</h3>
+      <p>We charge 5% of the sale value only when an order is successfully delivered. No upfront cost, no monthly fee.</p>
+      <ul class="fee-list">
+        <li>Free to create a supplier account</li>
+        <li>Free to list products</li>
+        <li>5% deducted automatically from payout</li>
+        <li>Payout within 24hrs of delivery confirmation</li>
+      </ul>
+    </div>
+    <div class="fee-card reveal">
+      <div class="fee-who">For delivery drivers</div>
+      <div class="fee-amount free">Earn</div>
+      <h3>Per-delivery income.</h3>
+      <p>Drivers are paid per completed delivery. Rate depends on distance and order size. No fuel deductions — that's your business.</p>
+      <ul class="fee-list">
+        <li>Earnings from R35–R120 per delivery</li>
+        <li>Weekly Friday payouts</li>
+        <li>Bonus for high-rated drivers</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- faq -->
+<section class="faq-section">
+  <div class="reveal" style="max-width:480px">
+    <span class="eyebrow">Common questions</span>
+    <h2 class="section-title">Still got <em>questions?</em></h2>
+  </div>
+  <div class="faq-cols">
+    <div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What areas do you currently cover? <span class="faq-chevron">▼</span></button><div class="faq-a">We currently operate in Cape Town (Western Cape), Johannesburg and Pretoria (Gauteng), and Durban (KwaZulu-Natal). We're expanding to Limpopo, Free State, and the Eastern Cape through 2025. Check the shop page for current coverage.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I order as an individual — not a spaza? <span class="faq-chevron">▼</span></button><div class="faq-a">Granum is built for B2B trade — spaza shops, tuck shops, and small retailers. We don't currently serve individual household orders, but that's on our roadmap.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What if my order is wrong or damaged? <span class="faq-chevron">▼</span></button><div class="faq-a">Take a photo immediately on delivery and report via the app or WhatsApp. We resolve all disputes within 4 hours and will replace or refund at no cost if the fault is on our side or the supplier's.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How are suppliers verified? <span class="faq-chevron">▼</span></button><div class="faq-a">Every farmer and manufacturer goes through ID verification, address confirmation, and a product quality check before receiving a verified badge. We also conduct random sample testing for fresh produce.</div></div>
+    </div>
+    <div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Is there a minimum order value? <span class="faq-chevron">▼</span></button><div class="faq-a">No. You can order a single item worth R8 if you want. There's no minimum order value and no minimum quantity. We believe that flexibility is what makes the platform work for small shops.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I schedule recurring orders? <span class="faq-chevron">▼</span></button><div class="faq-a">Recurring orders are on our roadmap for Q3 2025. For now, you can reorder from your history with a single tap — most regular shop owners have their weekly order down to under 2 minutes.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What payment methods are accepted? <span class="faq-chevron">▼</span></button><div class="faq-a">Visa, Mastercard, EFT, cash on delivery, SnapScan, and Granum community vouchers (Pay It Forward). We're adding Capitec Pay and TymeBank Pay in Q2 2025.</div></div>
+      <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How do I report a problem with a supplier? <span class="faq-chevron">▼</span></button><div class="faq-a">Every order has a "Report issue" button. You can also email us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2a424f4646456a4643444142435c4f04494504504b">[email&#160;protected]</a> or WhatsApp us directly. Suppliers with repeated complaints are suspended pending review.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- cta -->
+<section class="cta-section reveal">
+  <h2>Ready to stock smarter?</h2>
+  <p>Join 340+ spaza shops already saving money and stocking fresher produce through Granum.</p>
+  <div class="cta-btns">
+    <a href="granum-shop.html" class="btn-white">Browse the marketplace →</a>
+    <a href="granum-contact.html" class="btn-ghost">Talk to us first</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-main">
+    <div class="footer-brand">
+      <a href="granum-home.html" class="footer-logo">Granum</a>
+      <p class="footer-tagline">Connecting spaza shops to farmers & manufacturers.</p>
+      <div class="footer-social">
+        <a href="#" title="Facebook">📘</a>
+        <a href="#" title="Instagram">📸</a>
+        <a href="#" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Shop</h4>
+      <a href="granum-shop.html">Browse Products</a>
+      <a href="granum-cart.html">My Cart</a>
+      <a href="granum-vouchers.html">Gift Vouchers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="granum-about.html">About Us</a>
+      <a href="granum-howitworks.html">How It Works</a>
+      <a href="granum-leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="granum-contact.html">Contact Us</a>
+      <a href="#">FAQs</a>
+      <a href="#">Delivery Info</a>
+    </div>
+    <div class="footer-col footer-newsletter">
+      <h4>Stay Updated</h4>
+      <p>Get the latest deals and updates.</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Your email" />
+        <button>Subscribe</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Granum. All rights reserved.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function switchAud(id, btn) {
+    document.querySelectorAll('.aud-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.aud-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('aud-' + id).classList.add('active');
+    // animate visual cards in with stagger
+    const cards = document.querySelectorAll('#visual-' + id + ' .visual-card');
+    cards.forEach(c => { c.classList.remove('show'); });
+    cards.forEach((c, i) => setTimeout(() => c.classList.add('show'), i * 100));
+    // re-trigger reveals for new step items
+    initReveal();
+  }
+
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  function initReveal() {
+    const els = document.querySelectorAll('.reveal,.reveal-left,.reveal-right');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const siblings = Array.from(e.target.parentElement.children);
+          const delay = Math.min(siblings.indexOf(e.target) * 70, 280);
+          setTimeout(() => e.target.classList.add('up'), delay);
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    els.forEach(el => { if (!el.classList.contains('up')) obs.observe(el); });
+  }
+
+  // trigger visual cards on first load
+  function initVisualCards() {
+    const cards = document.querySelectorAll('#visual-spaza .visual-card');
+    cards.forEach((c, i) => setTimeout(() => c.classList.add('show'), i * 100));
+  }
+
+  // Initialize on page load
+  initReveal();
+  initVisualCards();
+</script>

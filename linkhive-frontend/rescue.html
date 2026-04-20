@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — Stock Rescue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --green:#4A6B3C; --green-dark:#3A552E; --green-light:#EAF3DE;
+      --red:#DC2626; --red-light:#FEE2E2;
+      --brown:#8B6946; --brown-light:#F5EDE0;
+      --cream:#FDFAF6; --card:#F2EEE7;
+      --text:#2E2C28; --muted:#7A776F;
+      --white:#FFFFFF;
+      --border:rgba(60,55,45,0.11); --border-mid:rgba(60,55,45,0.2);
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); padding:2rem 5vw; }
+    h1 { font-size:1.8rem; margin-bottom:1.5rem; color:var(--green); }
+    
+    .action-buttons { display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+    .action-btn {
+      flex:1; min-width:200px; padding:1rem 1.5rem; border-radius:12px; font-size:1rem;
+      font-weight:600; cursor:pointer; border:2px solid; transition:.2s;
+    }
+    .action-btn.need { background:var(--red-light); border-color:var(--red); color:var(--red); }
+    .action-btn.need:hover { background:var(--red); color:white; }
+    .action-btn.have { background:var(--green-light); border-color:var(--green); color:var(--green); }
+    .action-btn.have:hover { background:var(--green); color:white; }
+    
+    .filters { display:flex; gap:1rem; margin-bottom:1.5rem; align-items:center; }
+    .filters select { width:auto; padding:.6rem 1rem; }
+    .refresh-btn { padding:.6rem 1rem; background:var(--card); border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+    .refresh-btn:hover { background:var(--border); }
+    
+    .feed-section { margin-bottom:2rem; }
+    .feed-section h2 { font-size:1rem; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+    .section-requests h2 { color:var(--red); }
+    .section-offers h2 { color:var(--green); }
+    
+    .feed-list { display:grid; gap:1rem; }
+    
+    .feed-item {
+      background:var(--white); border:1px solid var(--border); border-radius:12px;
+      padding:1rem; display:flex; justify-content:space-between; align-items:flex-start;
+      flex-wrap: wrap; gap: 0.75rem;
+    }
+
+    /* ── responsive ──────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      body { padding: 1rem 4vw; }
+      h1 { font-size: 1.5rem; }
+      .action-buttons { flex-direction: column; }
+      .action-btn { min-width: 100%; }
+      .filters { flex-direction: column; align-items: stretch; }
+      .filters select { width: 100%; }
+      .feed-item { flex-direction: column; align-items: stretch; }
+      .feed-item .item-main { width: 100%; }
+      .feed-item .item-actions { width: 100%; display: flex; gap: 0.5rem; justify-content: flex-end; }
+      .modal { padding: 1rem; }
+      gap:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.04);
+    }
+    .feed-item.urgent { border-left:4px solid var(--red); }
+    .feed-item.available { border-left:4px solid var(--green); }
+    
+    .item-content { flex:1; }
+    .item-title { font-weight:600; font-size:1rem; margin-bottom:.3rem; }
+    .item-meta { font-size:.85rem; color:var(--muted); }
+    .item-location { display:inline-block; background:var(--card); padding:.2rem .5rem; border-radius:4px; font-size:.75rem; margin-right:.5rem; }
+    .item-urgency { display:inline-block; padding:.2rem .5rem; border-radius:4px; font-size:.75rem; font-weight:600; }
+    .urgency-today { background:var(--red-light); color:var(--red); }
+    .urgency-tomorrow { background:var(--brown-light); color:var(--brown); }
+    
+    .item-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+    .item-btn {
+      padding:.4rem .8rem; border-radius:6px; font-size:.8rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:var(--white);
+    }
+    .item-btn:hover { background:var(--card); }
+    .item-btn.resolve { border-color:var(--green); color:var(--green); }
+    .item-btn.resolve:hover { background:var(--green); color:white; }
+    
+    /* Modal */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none;
+      justify-content:center; align-items:center; z-index:1000;
+    }
+    .modal-overlay.show { display:flex; }
+    
+    .modal {
+      background:var(--white); border-radius:16px; padding:2rem; width:90%; max-width:480px;
+      max-height:90vh; overflow-y:auto;
+    }
+    .modal h2 { font-size:1.3rem; margin-bottom:1.5rem; }
+    .modal .close {
+      position:absolute; top:1rem; right:1rem; font-size:1.5rem;
+      cursor:pointer; background:none; border:none;
+    }
+    
+    label { display:block; font-size:.85rem; font-weight:600; margin-bottom:.4rem; color:var(--muted); }
+    input, select {
+      width:100%; padding:.7rem .9rem; border:1px solid var(--border); border-radius:8px;
+      font-size:.95rem; font-family:inherit; margin-bottom:1rem; background:var(--white);
+    }
+    input:focus, select:focus { outline:none; border-color:var(--green); }
+    
+    .radio-group { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+    .radio-group label { 
+      display:flex; align-items:center; gap:.4rem; cursor:pointer; 
+      padding:.5rem .8rem; border:1px solid var(--border); border-radius:8px; 
+      transition:.2s; margin-bottom:0; font-size:.85rem;
+    }
+    .radio-group input[type="radio"] { width:auto; margin:0; }
+    
+    .modal-buttons { display:flex; gap:1rem; margin-top:1.5rem; }
+    .modal-buttons button { flex:1; }
+    .modal-buttons .cancel { background:var(--card); color:var(--text); }
+    .modal-buttons .cancel:hover { background:var(--border); }
+    
+    .empty { color:var(--muted); font-style:italic; text-align:center; padding:2rem; }
+  </style>
+</head>
+<body>
+  <h1>🚨 Stock Rescue — Spaza-to-Spaza Emergency Sharing</h1>
+  
+  <div class="action-buttons">
+    <button class="action-btn need" onclick="openModal('request')">🆘 I NEED STOCK</button>
+    <button class="action-btn have" onclick="openModal('offer')">💚 I HAVE EXTRA STOCK</button>
+  </div>
+  
+  <div class="filters">
+    <select id="locationFilter" onchange="loadFeed()">
+      <option value="all">📍 All Locations</option>
+      <option value="Soweto Zone A">Soweto Zone A</option>
+      <option value="Soweto Zone B">Soweto Zone B</option>
+      <option value="Khayelitsha">Khayelitsha</option>
+      <option value="Tembisa">Tembisa</option>
+      <option value="Alexandra">Alexandra</option>
+      <option value="Soshanguve">Soshanguve</option>
+      <option value="Mamelodi">Mamelodi</option>
+    </select>
+    <button class="refresh-btn" onclick="loadFeed()">🔄 Refresh</button>
+  </div>
+  
+  <div class="feed-section section-requests">
+    <h2>🆘 REQUESTS (NEED STOCK)</h2>
+    <div id="requests-list" class="feed-list">
+      <p class="empty">Loading...</p>
+    </div>
+  </div>
+  
+  <div class="feed-section section-offers">
+    <h2>💚 OFFERS (AVAILABLE STOCK)</h2>
+    <div id="offers-list" class="feed-list">
+      <p class="empty">Loading...</p>
+    </div>
+  </div>
+  
+  <!-- REQUEST MODAL -->
+  <div id="request-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>🆘 Post Emergency Request</h2>
+      
+      <label>Product name</label>
+      <input type="text" id="req-product" placeholder="e.g. Brown bread, Fresh milk" />
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div>
+          <label>Quantity</label>
+          <input type="number" id="req-quantity" placeholder="10" />
+        </div>
+        <div>
+          <label>Unit</label>
+          <select id="req-unit">
+            <option value="loaves">loaves</option>
+            <option value="kg">kg</option>
+            <option value="litres">litres</option>
+            <option value="dozen">dozen</option>
+            <option value="bags">bags</option>
+            <option value="pieces">pieces</option>
+          </select>
+        </div>
+      </div>
+      
+      <label>Location</label>
+      <select id="req-location">
+        <option value="Soweto Zone A">Soweto Zone A</option>
+        <option value="Soweto Zone B">Soweto Zone B</option>
+        <option value="Khayelitsha">Khayelitsha</option>
+        <option value="Tembisa">Tembisa</option>
+        <option value="Alexandra">Alexandra</option>
+        <option value="Soshanguve">Soshanguve</option>
+        <option value="Mamelodi">Mamelodi</option>
+      </select>
+      
+      <label>Urgency</label>
+      <div class="radio-group">
+        <label><input type="radio" name="req-urgency" value="today" /><span>Today</span></label>
+        <label><input type="radio" name="req-urgency" value="tomorrow" checked /><span>Tomorrow</span></label>
+      </div>
+      
+      <label>Willing to pay</label>
+      <div class="radio-group">
+        <label><input type="radio" name="req-pay" value="at cost" /><span>Pay at cost</span></label>
+        <label><input type="radio" name="req-pay" value="small markup" /><span>Small markup</span></label>
+        <label><input type="radio" name="req-pay" value="trade only" /><span>Trade only</span></label>
+      </div>
+      
+      <label>Your shop name</label>
+      <input type="text" id="req-shop" placeholder="e.g. Thabo's Corner" />
+      
+      <label>Contact phone</label>
+      <input type="tel" id="req-phone" placeholder="+27851234567" />
+      
+      <div class="modal-buttons">
+        <button onclick="submitRequest()">🚨 POST REQUEST</button>
+        <button class="cancel" onclick="closeModal('request')">CANCEL</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- OFFER MODAL -->
+  <div id="offer-modal" class="modal-overlay">
+    <div class="modal">
+      <h2>💚 Post Available Stock</h2>
+      
+      <label>Product name</label>
+      <input type="text" id="off-product" placeholder="e.g. Brown bread, Maize meal" />
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div>
+          <label>Quantity</label>
+          <input type="number" id="off-quantity" placeholder="20" />
+        </div>
+        <div>
+          <label>Unit</label>
+          <select id="off-unit">
+            <option value="loaves">loaves</option>
+            <option value="kg">kg</option>
+            <option value="litres">litres</option>
+            <option value="dozen">dozen</option>
+            <option value="bags">bags</option>
+            <option value="pieces">pieces</option>
+          </select>
+        </div>
+      </div>
+      
+      <label>Location</label>
+      <select id="off-location">
+        <option value="Soweto Zone A">Soweto Zone A</option>
+        <option value="Soweto Zone B">Soweto Zone B</option>
+        <option value="Khayelitsha">Khayelitsha</option>
+        <option value="Tembisa">Tembisa</option>
+        <option value="Alexandra">Alexandra</option>
+        <option value="Soshanguve">Soshanguve</option>
+        <option value="Mamelodi">Mamelodi</option>
+      </select>
+      
+      <label>Price (per unit)</label>
+      <input type="text" id="off-price" placeholder="e.g. R14/loaf" />
+      
+      <label>Your shop name</label>
+      <input type="text" id="off-shop" placeholder="e.g. Mama Rose Spaza" />
+      
+      <label>Contact phone</label>
+      <input type="tel" id="off-phone" placeholder="+27851234567" />
+      
+      <div class="modal-buttons">
+        <button onclick="submitOffer()">💚 POST OFFER</button>
+        <button class="cancel" onclick="closeModal('offer')">CANCEL</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const API = 'http://localhost:3000/fsm';
+    
+    // Load feed on page load
+    document.addEventListener('DOMContentLoaded', loadFeed);
+    
+    function openModal(type) {
+      document.getElementById(`${type}-modal`).classList.add('show');
+    }
+    
+    function closeModal(type) {
+      document.getElementById(`${type}-modal`).classList.remove('show');
+    }
+    
+    // Close modal on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('show');
+      });
+    });
+    
+    // Generate ID
+    function generateId(prefix) {
+      return prefix + '_' + Date.now().toString(36).substring(2, 8);
+    }
+    
+    // Load feed
+    async function loadFeed() {
+      const location = document.getElementById('locationFilter').value;
+      
+      // Load requests
+      try {
+        const res = await fetch(`${API}/rescue/requests?status=active${location !== 'all' ? '&location=' + encodeURIComponent(location) : ''}`);
+        const { requests } = await res.json();
+        
+        const container = document.getElementById('requests-list');
+        if (!requests || requests.length === 0) {
+          container.innerHTML = '<p class="empty">No active requests</p>';
+        } else {
+          container.innerHTML = requests.map(r => `
+            <div class="feed-item urgent">
+              <div class="item-content">
+                <div class="item-title">🆘 ${r.urgency === 'today' ? 'URGENT: ' : ''}${r.product}</div>
+                <div class="item-meta">
+                  <span class="item-location">${r.location}</span>
+                  <span class="item-urgency ${r.urgency === 'today' ? 'urgency-today' : 'urgency-tomorrow'}">${r.urgency}</span>
+                </div>
+                <div class="item-meta">${r.quantity} ${r.unit} | ${r.willing_to_pay || 'N/A'} | ${r.shop_name}</div>
+              </div>
+              <div class="item-actions">
+                <button class="item-btn" onclick="showContact('${r.shop_name}', '${r.contact_phone}')">📞 CONTACT</button>
+                <button class="item-btn resolve" onclick="markResolved('${r.id}', 'request')">✅ RESOLVED</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      
+      // Load offers
+      try {
+        const res = await fetch(`${API}/rescue/offers?status=active${location !== 'all' ? '&location=' + encodeURIComponent(location) : ''}`);
+        const { offers } = await res.json();
+        
+        const container = document.getElementById('offers-list');
+        if (!offers || offers.length === 0) {
+          container.innerHTML = '<p class="empty">No active offers</p>';
+        } else {
+          container.innerHTML = offers.map(o => `
+            <div class="feed-item available">
+              <div class="item-content">
+                <div class="item-title">💚 ${o.product}</div>
+                <div class="item-meta">
+                  <span class="item-location">${o.location}</span>
+                </div>
+                <div class="item-meta">${o.quantity} ${o.unit} | ${o.price} | ${o.shop_name}</div>
+              </div>
+              <div class="item-actions">
+                <button class="item-btn" onclick="showContact('${o.shop_name}', '${o.contact_phone}')">📞 CONTACT</button>
+                <button class="item-btn resolve" onclick="markResolved('${o.id}', 'offer')">✅ RESOLVED</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    
+    // Submit request
+    async function submitRequest() {
+      const product = document.getElementById('req-product').value.trim();
+      const quantity = parseInt(document.getElementById('req-quantity').value);
+      const location = document.getElementById('req-location').value;
+      const shop = document.getElementById('req-shop').value.trim();
+      const phone = document.getElementById('req-phone').value.trim();
+      
+      if (!product || !quantity || !shop || !phone) {
+        return alert('Fill in all required fields');
+      }
+      
+      const id = generateId('req');
+      const payload = {
+        id: id,
+        product: product,
+        quantity: quantity,
+        unit: document.getElementById('req-unit').value,
+        location: location,
+        urgency: document.querySelector('input[name="req-urgency"]:checked')?.value || 'tomorrow',
+        willing_to_pay: document.querySelector('input[name="req-pay"]:checked')?.value || 'at cost',
+        shop_name: shop,
+        contact_phone: phone,
+        status: 'active'
+      };
+      
+      try {
+        const res = await fetch(`${API}/rescue/requests`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (res.ok) {
+          alert(`🆘 Request posted!\n\nID: ${id}\n\nOther spaza owners will see this in the feed.`);
+          closeModal('request');
+          loadFeed();
+        } else {
+          const err = await res.json();
+          alert('Error: ' + (err.error || 'Failed'));
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+    
+    // Submit offer
+    async function submitOffer() {
+      const product = document.getElementById('off-product').value.trim();
+      const quantity = parseInt(document.getElementById('off-quantity').value);
+      const location = document.getElementById('off-location').value;
+      const shop = document.getElementById('off-shop').value.trim();
+      const phone = document.getElementById('off-phone').value.trim();
+      
+      if (!product || !quantity || !shop || !phone) {
+        return alert('Fill in all required fields');
+      }
+      
+      const id = generateId('off');
+      const payload = {
+        id: id,
+        product: product,
+        quantity: quantity,
+        unit: document.getElementById('off-unit').value,
+        location: location,
+        price: document.getElementById('off-price').value.trim() || 'Negotiable',
+        shop_name: shop,
+        contact_phone: phone,
+        status: 'active'
+      };
+      
+      try {
+        const res = await fetch(`${API}/rescue/offers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (res.ok) {
+          alert(`💚 Offer posted!\n\nID: ${id}\n\nOther spaza owners will see this in the feed.`);
+          closeModal('offer');
+          loadFeed();
+        } else {
+          const err = await res.json();
+          alert('Error: ' + (err.error || 'Failed'));
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+    
+    // Show contact
+    function showContact(shopName, phone) {
+      alert(`📞 Contact ${shopName}\nPhone: ${phone}\n\n(In production, this would open WhatsApp)`);
+    }
+    
+    // Mark resolved
+    async function markResolved(id, type) {
+      if (!confirm('Mark as resolved? This will hide it from the feed.')) return;
+      
+      try {
+        const res = await fetch(`${API}/rescue/${type === 'request' ? 'requests' : 'offers'}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'resolved' })
+        });
+        
+        if (res.ok) {
+          alert('✅ Marked as resolved. Thank you for helping your community!');
+          loadFeed();
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>

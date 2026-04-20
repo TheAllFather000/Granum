@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — About Us</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:       #4A6B3C;
+      --green-dark:  #3A552E;
+      --green-light: #EAF3DE;
+      --brown:       #8B6946;
+      --brown-light: #F5EDE0;
+      --cream:       #FDFAF6;
+      --card:        #F2EEE7;
+      --text:        #2E2C28;
+      --muted:       #7A776F;
+      --white:       #FFFFFF;
+      --border:      rgba(60,55,45,0.11);
+      --border-mid:  rgba(60,55,45,0.18);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
+
+    /* ── nav ─────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(253,250,246,0.92);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 5vw;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: var(--green); text-decoration: none; }
+    .nav-logo span { color: var(--brown); }
+    .nav-links { display: flex; gap: 1.8rem; list-style: none; }
+    .nav-links a { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--green); }
+    .cart-btn {
+      background: var(--green); color: white; border: none; border-radius: 9px;
+      padding: 8px 16px; font-size: 14px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      font-family: 'DM Sans', sans-serif; transition: background 0.2s;
+    }
+    .cart-btn:hover { background: var(--green-dark); }
+    .cart-count {
+      background: var(--brown); color: white; border-radius: 50%;
+      width: 19px; height: 19px; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── scroll reveal ───────────────────────────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.up { opacity: 1; transform: none; }
+    .reveal-left  { opacity: 0; transform: translateX(-28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal-right { opacity: 0; transform: translateX(28px);  transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal-left.up, .reveal-right.up { opacity: 1; transform: none; }
+
+    /* ── hero ────────────────────────────────────────────────── */
+    .hero {
+      padding: 5rem 5vw 4rem;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--brown); margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+      font-weight: 900; line-height: 1.1; letter-spacing: -1px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 em { color: var(--green); font-style: normal; }
+    .hero p { font-size: 1rem; color: var(--muted); line-height: 1.8; max-width: 460px; }
+
+    /* hero image trio */
+    .hero-images {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 10px;
+    }
+    .img-slot {
+      border-radius: 14px; overflow: hidden;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px;
+      cursor: pointer; transition: filter 0.25s;
+      position: relative;
+    }
+    .img-slot:hover { filter: brightness(0.96); }
+    .img-slot:first-child {
+      grid-column: 1 / 3;
+      height: 200px;
+    }
+    .img-slot:not(:first-child) { height: 130px; }
+
+    .img-slot-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(74,107,60,0.12);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .img-slot-icon svg { width: 18px; height: 18px; }
+    .img-slot-label { font-size: 12px; color: var(--muted); font-weight: 500; text-align: center; padding: 0 1rem; line-height: 1.4; }
+    .img-slot-sub { font-size: 10px; color: var(--muted); opacity: 0.6; }
+
+    /* replace-hint */
+    .img-slot::after {
+      content: 'Replace with your image';
+      position: absolute; bottom: 8px; right: 10px;
+      font-size: 9px; color: var(--muted); opacity: 0.5;
+      font-style: italic;
+    }
+
+    /* ── section shared ──────────────────────────────────────── */
+    section { padding: 5rem 5vw; }
+    section + section { border-top: 1px solid var(--border); }
+    .section-header { margin-bottom: 2.8rem; }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.7rem, 3vw, 2.2rem);
+      font-weight: 700; letter-spacing: -0.4px; line-height: 1.15;
+    }
+    .section-title em { color: var(--green); font-style: normal; }
+    .section-sub { font-size: 15px; color: var(--muted); line-height: 1.75; margin-top: 0.5rem; max-width: 560px; }
+
+    /* ── mission ─────────────────────────────────────────────── */
+    .mission-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center;
+    }
+    .mission-text p {
+      font-size: 15px; color: var(--muted); line-height: 1.85;
+      margin-bottom: 1.1rem;
+    }
+    .mission-text p:last-child { margin-bottom: 0; }
+    .mission-text strong { color: var(--text); font-weight: 600; }
+
+    .mission-stat-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+      background: var(--border); border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .mission-stat {
+      background: var(--white); padding: 1.5rem 1.3rem;
+    }
+    .mission-stat .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem; font-weight: 900; color: var(--green); line-height: 1;
+    }
+    .mission-stat .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+    /* ── values ──────────────────────────────────────────────── */
+    .values-section { background: var(--card); }
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .value-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.5rem;
+      transition: transform 0.22s, border-color 0.22s;
+    }
+    @media (hover: hover) {
+      .value-card:hover { transform: translateY(-3px); border-color: var(--border-mid); }
+    }
+    .val-icon-wrap {
+      width: 46px; height: 46px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 1rem;
+    }
+    .val-icon-wrap.g { background: var(--green-light); }
+    .val-icon-wrap.b { background: var(--brown-light); }
+    .val-icon-wrap.s { background: #EEF0FA; }
+    .value-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .value-card p  { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    /* ── story / image feature ───────────────────────────────── */
+    .story-layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+    }
+    .story-img-slot {
+      border-radius: 18px; overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--card);
+      aspect-ratio: 4/3;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+      cursor: pointer; transition: filter 0.25s; position: relative;
+    }
+    .story-img-slot:hover { filter: brightness(0.96); }
+    .story-img-slot::after {
+      content: 'Replace with your image';
+      position: absolute; bottom: 12px; right: 14px;
+      font-size: 9px; color: var(--muted); opacity: 0.5; font-style: italic;
+    }
+    .story-text p { font-size: 15px; color: var(--muted); line-height: 1.85; margin-bottom: 1.1rem; }
+    .story-text p:last-child { margin-bottom: 0; }
+    .story-text strong { color: var(--text); font-weight: 600; }
+
+    /* pull quote */
+    .pull-quote {
+      border-left: 3px solid var(--green);
+      padding: 0.8rem 1.2rem;
+      margin: 1.5rem 0;
+      border-radius: 0 8px 8px 0;
+      background: var(--green-light);
+    }
+    .pull-quote p {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem; font-style: italic;
+      color: var(--green-dark); line-height: 1.6;
+      margin: 0 !important;
+    }
+    .pull-quote cite { font-size: 12px; color: var(--muted); margin-top: 6px; display: block; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+    /* ── team ────────────────────────────────────────────────── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .team-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.5rem 1.2rem; text-align: center;
+      transition: transform 0.22s;
+    }
+    @media (hover: hover) { .team-card:hover { transform: translateY(-3px); } }
+    .avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      margin: 0 auto 1rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    .avatar.g { background: var(--green-light); }
+    .avatar.b { background: var(--brown-light); }
+    .avatar.s { background: #EEF0FA; }
+    .team-card h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .team-card .role { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .team-card p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    /* ── links section ───────────────────────────────────────── */
+    .links-section { background: var(--green); }
+    .links-section .section-title { color: var(--white); }
+    .links-section .section-title em { color: rgba(255,255,255,0.65); font-style: normal; }
+    .links-section .eyebrow { color: rgba(255,255,255,0.55); }
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .link-card {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px; padding: 1.4rem 1.3rem;
+      text-decoration: none; color: white;
+      display: flex; align-items: flex-start; gap: 12px;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .link-card:hover { background: rgba(255,255,255,0.18); transform: translateY(-2px); }
+    .link-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .link-text h4 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+    .link-text p  { font-size: 12px; opacity: 0.7; line-height: 1.5; }
+    .link-arrow { margin-left: auto; opacity: 0.5; font-size: 16px; align-self: center; flex-shrink: 0; }
+
+    /* ── footer ──────────────────────────────────────────────── */
+    footer { background:var(--text); color:rgba(255,255,255,.7); padding:3.5rem 5vw 1.5rem; }
+    .footer-main { display:grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr; gap:2.5rem; max-width:1200px; margin:0 auto 2rem; }
+    .footer-brand { display:flex; flex-direction:column; gap:1rem; }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:white; text-decoration:none; }
+    .footer-logo span { color:var(--brown); }
+    .footer-tagline { font-size:14px; line-height:1.5; color:rgba(255,255,255,.5); }
+    .footer-social { display:flex; gap:12px; }
+    .footer-social a { font-size:22px; text-decoration:none; transition:transform .2s; }
+    .footer-social a:hover { transform:scale(1.15); }
+    .footer-col { display:flex; flex-direction:column; gap:10px; }
+    .footer-col h4 { color:white; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .footer-col a { color:rgba(255,255,255,.55); font-size:13px; text-decoration:none; transition:color .2s; }
+    .footer-col a:hover { color:white; }
+    .footer-newsletter p { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:10px; }
+    .newsletter-form { display:flex; gap:8px; }
+    .newsletter-form input { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:10px 12px; font-size:13px; color:white; }
+    .newsletter-form input::placeholder { color:rgba(255,255,255,.35); }
+    .newsletter-form button { background:var(--green); color:white; border:none; border-radius:8px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+    .newsletter-form button:hover { background:var(--green-dark); }
+    .footer-bottom { border-top:1px solid rgba(255,255,255,.1); padding-top:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; max-width:1200px; margin:0 auto; }
+    .footer-bottom p { font-size:12px; color:rgba(255,255,255,.4); }
+    .footer-legal { display:flex; gap:1.5rem; }
+    .footer-legal a { font-size:12px; color:rgba(255,255,255,.4); text-decoration:none; transition:color .2s; }
+    .footer-legal a:hover { color:white; }
+    @media(max-width:900px) { .footer-main { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column:span 2; } }
+    @media(max-width:580px) { .footer-main { grid-template-columns: 1fr; } .footer-brand { grid-column:span 1; } }
+
+    /* ── responsive ──────────────────────────────────────────── */
+    @media (max-width: 860px) {
+      .hero, .mission-layout, .story-layout { grid-template-columns: 1fr; gap: 2.5rem; }
+      .hero { padding: 3rem 5vw; }
+      footer { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      section { padding: 3.5rem 5vw; }
+      .mission-stat-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+</head>
+<body>
+
+<!-- NAV -->
+
+
+<!-- ── HERO ──────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="reveal-left">
+    <span class="eyebrow">Our story</span>
+    <h1>We exist to fix a<br><em>broken system.</em></h1>
+    <p>Township spaza shops pay more for stock than supermarkets charge customers. Farmers sell below cost to wholesalers. Families pay inflated prices for basic food. Granum is our attempt to fix all three — at once.</p>
+  </div>
+  <div class="hero-images reveal-right">
+    <div class="img-slot" onclick="showToast('Drop your team or community photo here!')">
+      <div class="img-slot-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4A6B3C" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <span class="img-slot-label">Hero image — team or community</span>
+      <span class="img-slot-sub">Recommended: 1200 × 500px</span>
+    </div>
+    <div class="img-slot" onclick="showToast('Drop a spaza shop photo here!')">
+      <div class="img-slot-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4A6B3C" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <span class="img-slot-label">Spaza shop photo</span>
+    </div>
+    <div class="img-slot" onclick="showToast('Drop a farm/delivery photo here!')">
+      <div class="img-slot-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4A6B3C" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <span class="img-slot-label">Farm or delivery photo</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── MISSION ────────────────────────────────────────────────── -->
+<section>
+  <div class="mission-layout">
+    <div class="mission-text reveal-left">
+      <div class="section-header">
+        <span class="eyebrow">Our mission</span>
+        <h2 class="section-title">Cut out the<br><em>middlemen.</em></h2>
+      </div>
+      <p>South Africa's food supply chain has too many layers. By the time fresh produce travels from a farm in Limpopo to a spaza shelf in Khayelitsha, it's passed through four or five hands — each one taking a cut. The farmer earns less. The shop owner pays more. The customer gets squeezed.</p>
+      <p><strong>Granum collapses that chain to one hop.</strong> Farmers list directly. Spaza owners order directly. We handle logistics, payments, and trust. Farmers keep 95% of every sale. Spaza owners stock at prices that let them compete.</p>
+      <p>We're not a charity. We're a platform built on the belief that fair trade, at scale, is the most sustainable form of social impact.</p>
+    </div>
+    <div class="mission-stat-grid reveal-right">
+      <div class="mission-stat">
+        <div class="num">95%</div>
+        <div class="lbl">of every sale goes directly to the farmer or supplier</div>
+      </div>
+      <div class="mission-stat">
+        <div class="num">18%</div>
+        <div class="lbl">average saving for spaza owners vs. wholesale</div>
+      </div>
+      <div class="mission-stat">
+        <div class="num">0</div>
+        <div class="lbl">minimum order — stock what you need, nothing more</div>
+      </div>
+      <div class="mission-stat">
+        <div class="num">24hr</div>
+        <div class="lbl">farm-to-shelf delivery in most covered areas</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── VALUES ─────────────────────────────────────────────────── -->
+<section class="values-section">
+  <div class="section-header reveal" style="max-width:520px">
+    <span class="eyebrow">What we stand for</span>
+    <h2 class="section-title">Our <em>values</em></h2>
+    <p class="section-sub">Five principles that shape every decision we make — from which farmers we onboard to how we handle a late delivery.</p>
+  </div>
+  <div class="values-grid">
+    <div class="value-card reveal">
+      <div class="val-icon-wrap g">🌱</div>
+      <h3>Radical transparency</h3>
+      <p>Every price on Granum shows exactly what the farmer earns and what we take. No hidden markups. No fine print. If we can't defend a number publicly, we don't charge it.</p>
+    </div>
+    <div class="value-card reveal">
+      <div class="val-icon-wrap b">🤝</div>
+      <h3>Community first</h3>
+      <p>We're not building for investors — we're building for the spaza owner who wakes up at 5am, and the farmer who hasn't had a fair buyer in years. Their wins are our wins.</p>
+    </div>
+    <div class="value-card reveal">
+      <div class="val-icon-wrap g">⚡</div>
+      <h3>Speed as respect</h3>
+      <p>When someone's livelihood depends on stock arriving on time, speed is not a feature — it's a form of respect. We obsess over 24-hour delivery because it matters.</p>
+    </div>
+    <div class="value-card reveal">
+      <div class="val-icon-wrap s">🔒</div>
+      <h3>Trust by default</h3>
+      <p>Verified badges aren't gatekeeping — they're earned. We verify every farmer and manufacturer so spaza owners can order with confidence, not anxiety.</p>
+    </div>
+    <div class="value-card reveal">
+      <div class="val-icon-wrap b">♻️</div>
+      <h3>Local, always</h3>
+      <p>We prioritise suppliers within 200km of delivery areas. Shorter supply chains mean fresher food, lower emissions, and money that stays in the community.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── STORY / SECOND IMAGE ───────────────────────────────────── -->
+<section>
+  <div class="story-layout">
+    <div class="story-img-slot reveal-left" onclick="showToast('Drop an impact or operations photo here!')">
+      <div class="img-slot-icon" style="width:48px;height:48px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4A6B3C" stroke-width="1.5" width="22" height="22"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <span class="img-slot-label" style="font-size:13px">Impact or operations photo</span>
+      <span class="img-slot-sub">Recommended: 900 × 680px</span>
+    </div>
+    <div class="story-text reveal-right">
+      <span class="eyebrow">Where we come from</span>
+      <h2 class="section-title" style="margin-bottom:1.2rem">Born in a <em>township,</em><br>built for scale.</h2>
+      <p>Granum started as a conversation between a spaza owner in Khayelitsha and a computer science student from UCT. The spaza owner was paying R28 per 5kg bag of maize meal from a wholesaler in town. The same bag cost R22 at Pick n Pay two streets over — a store she couldn't stock from.</p>
+      <div class="pull-quote">
+        <p>"Why is it cheaper to buy retail than wholesale? Something is broken."</p>
+        <cite>— The conversation that started Granum</cite>
+      </div>
+      <p>We built a prototype in three weeks. Within a month, five spaza shops were ordering. Within six months, we had 87 suppliers on the platform. <strong>The problem was real. The demand was there. We just needed to build the bridge.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ── TEAM ────────────────────────────────────────────────────── -->
+<section style="background: var(--card)">
+  <div class="section-header reveal" style="max-width:480px">
+    <span class="eyebrow">The people</span>
+    <h2 class="section-title">Who's building <em>Granum</em></h2>
+    <p class="section-sub">A small team with a big chip on their shoulder.</p>
+  </div>
+  <div class="team-grid">
+    <div class="team-card reveal">
+      <div class="avatar g">👨🏽‍💻</div>
+      <h3>Ibrahim Sow</h3>
+      <div class="role">INF3014F Student @UCT</div>
+      <p>Former spaza owner's son. BSc Computer Science, UCT. Believes tech should work for people who need it most.</p>
+    </div>
+</section>
+
+<!-- ── LINKS ───────────────────────────────────────────────────── -->
+<section class="links-section">
+  <div class="section-header reveal" style="max-width:500px">
+    <span class="eyebrow">Get involved</span>
+    <h2 class="section-title" style="color:white">Everything you need to <em>know us</em> better</h2>
+  </div>
+  <div class="links-grid">
+    <a href="#" class="link-card reveal" onclick="window.location.href='granum-auth.html?next=granum-profile.html'">
+      <div class="link-icon">🏪</div>
+      <div class="link-text">
+        <h4>Join as a spaza shop</h4>
+        <p>Sign up your shop and start ordering stock at better prices.</p>
+      </div>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="#" class="link-card reveal" onclick="window.location.href='granum-auth.html?next=granum-profile.html'">
+      <div class="link-icon">🌱</div>
+      <div class="link-text">
+        <h4>List as a farmer</h4>
+        <p>Reach hundreds of spaza shops and sell directly at your price.</p>
+      </div>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="#" class="link-card reveal" onclick="window.location.href='granum-contact.html'">
+      <div class="link-icon">🚚</div>
+      <div class="link-text">
+        <h4>Become a delivery partner</h4>
+        <p>Drive your own route, earn per delivery, flexible hours.</p>
+      </div>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="#" class="link-card reveal" onclick="window.location.href='granum-contact.html'">
+      <div class="link-icon">📊</div>
+      <div class="link-text">
+        <h4>Read our impact report</h4>
+        <p>Numbers, stories, and what we learned in our first year.</p>
+      </div>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="#" class="link-card reveal" onclick="window.location.href='granum-contact.html'">
+      <div class="link-icon">📎</div>
+      <div class="link-text">
+        <h4>Media kit & press</h4>
+        <p>Logos, brand guide, and our story for journalists and partners.</p>
+      </div>
+      <span class="link-arrow">→</span>
+    </a>
+    <a href="#" class="link-card reveal" onclick="window.location.href='granum-contact.html'">
+      <div class="link-icon">✉️</div>
+      <div class="link-text">
+        <h4>Get in touch</h4>
+        <p>Questions, partnerships, feedback — we respond to everything.</p>
+      </div>
+      <span class="link-arrow">→</span>
+    </a>
+  </div>
+</section>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-main">
+    <div class="footer-brand">
+      <a href="granum-home.html" class="footer-logo">Granum</a>
+      <p class="footer-tagline">Connecting spaza shops to farmers & manufacturers.</p>
+      <div class="footer-social">
+        <a href="#" title="Facebook">📘</a>
+        <a href="#" title="Instagram">📸</a>
+        <a href="#" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Shop</h4>
+      <a href="granum-shop.html">Browse Products</a>
+      <a href="granum-cart.html">My Cart</a>
+      <a href="granum-vouchers.html">Gift Vouchers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="granum-about.html">About Us</a>
+      <a href="granum-howitworks.html">How It Works</a>
+      <a href="granum-leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="granum-contact.html">Contact Us</a>
+      <a href="#">FAQs</a>
+      <a href="#">Delivery Info</a>
+    </div>
+    <div class="footer-col footer-newsletter">
+      <h4>Stay Updated</h4>
+      <p>Get the latest deals and updates.</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Your email" />
+        <button>Subscribe</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Granum. All rights reserved.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // scroll reveal — clean IntersectionObserver, no loops
+  function initReveal() {
+    const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          // slight delay based on position in its parent for a soft stagger
+          const siblings = Array.from(e.target.parentElement.children);
+          const idx = siblings.indexOf(e.target);
+          const delay = Math.min(idx * 80, 320);
+          setTimeout(() => e.target.classList.add('up'), delay);
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach(el => obs.observe(el));
+  }
+
+  // cart badge — uses nav.js global (or localStorage fallthrough)
+  function updateCartBadge() {
+    if (window.syncBadge) { window.syncBadge(); return; }
+    const cart = JSON.parse(localStorage.getItem('lh_cart') || '[]');
+    const el = document.getElementById('cart-count');
+    if (el) el.textContent = cart.reduce((s, i) => s + i.qty, 0);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  initReveal();
+  updateCartBadge();
+</script>
+
+<style>
+  .toast {
+    position: fixed; bottom: 1.5rem; left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--text); color: white;
+    padding: 11px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 500; z-index: 1000; opacity: 0;
+    transition: all 0.28s; pointer-events: none;
+    white-space: nowrap; max-width: 90vw;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</body>
+</html>

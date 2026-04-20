@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — Stock your spaza smarter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── reset & tokens ───────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:       #4A6B3C;
+      --green-dark:  #3A552E;
+      --green-light: #EAF3DE;
+      --brown:       #8B6946;
+      --brown-light: #F5EDE0;
+      --cream:       #FDFAF6;
+      --card:        #F2EEE7;
+      --text:        #2E2C28;
+      --muted:       #7A776F;
+      --white:       #FFFFFF;
+      --border:      rgba(60,55,45,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── scroll-reveal utility ───────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+    .reveal-left  { opacity: 0; transform: translateX(-40px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal-right { opacity: 0; transform: translateX(40px);  transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal-left.visible, .reveal-right.visible { opacity: 1; transform: none; }
+
+    /* stagger children */
+    .stagger > * { opacity: 0; transform: translateY(24px); transition: opacity 0.55s ease, transform 0.55s ease; }
+    .stagger.visible > *:nth-child(1) { opacity:1; transform:none; transition-delay:0s; }
+    .stagger.visible > *:nth-child(2) { opacity:1; transform:none; transition-delay:0.1s; }
+    .stagger.visible > *:nth-child(3) { opacity:1; transform:none; transition-delay:0.2s; }
+    .stagger.visible > *:nth-child(4) { opacity:1; transform:none; transition-delay:0.3s; }
+
+    /* ── nav ─────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(253,250,246,0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+      transition: box-shadow 0.3s;
+    }
+    nav.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 900;
+      color: var(--green);
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--brown); }
+
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 14px; font-weight: 500;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute; bottom: -3px; left: 0;
+      width: 0; height: 2px;
+      background: var(--green);
+      transition: width 0.2s;
+    }
+    .nav-links a:hover { color: var(--green); }
+    .nav-links a:hover::after { width: 100%; }
+
+    .nav-right { display: flex; gap: 12px; align-items: center; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-primary   { background: var(--green); color: var(--white); padding: 10px 20px; font-size: 14px; }
+    .btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .btn-outline   { background: transparent; color: var(--green); border: 1.5px solid var(--green); padding: 9px 20px; font-size: 14px; }
+    .btn-outline:hover { background: var(--green); color: var(--white); }
+    .btn-lg { padding: 14px 28px; font-size: 15px; border-radius: 12px; }
+
+    .cart-btn {
+      background: var(--green); color: var(--white);
+      border: none; border-radius: 10px;
+      padding: 9px 16px; font-size: 14px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: all 0.2s;
+    }
+    .cart-btn:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .cart-count {
+      background: var(--brown); color: white;
+      border-radius: 50%; width: 20px; height: 20px;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── hero ────────────────────────────────────────────────── */
+    .hero {
+      min-height: 92vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-left {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 6rem 4rem 6rem 5vw;
+      position: relative; z-index: 2;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--green-light);
+      color: var(--green-dark);
+      font-size: 12px; font-weight: 600;
+      padding: 6px 14px; border-radius: 20px;
+      border: 1px solid rgba(74,107,60,0.2);
+      width: fit-content; margin-bottom: 1.8rem;
+      animation: fadeSlideIn 0.8s ease both;
+    }
+    .hero-badge::before { content: '🌱'; font-size: 14px; }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      color: var(--text);
+      margin-bottom: 1.2rem;
+      animation: fadeSlideIn 0.8s 0.1s ease both;
+    }
+    .hero h1 em { color: var(--green); font-style: normal; }
+    .hero h1 .underline-word {
+      position: relative; display: inline-block;
+    }
+    .hero h1 .underline-word::after {
+      content: '';
+      position: absolute; bottom: 2px; left: 0;
+      width: 100%; height: 4px;
+      background: var(--brown);
+      border-radius: 2px;
+      animation: growWidth 0.6s 0.9s ease both;
+    }
+    @keyframes growWidth { from { width: 0; } to { width: 100%; } }
+
+    .hero-sub {
+      font-size: 1.1rem; line-height: 1.75;
+      color: var(--muted); max-width: 440px;
+      margin-bottom: 2.4rem;
+      animation: fadeSlideIn 0.8s 0.2s ease both;
+    }
+
+    .hero-btns {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      animation: fadeSlideIn 0.8s 0.3s ease both;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .hero-trust {
+      margin-top: 3rem;
+      display: flex; align-items: center; gap: 1rem;
+      animation: fadeSlideIn 0.8s 0.5s ease both;
+    }
+    .trust-avatars { display: flex; }
+    .trust-avatars span {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 2px solid var(--cream);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; margin-left: -8px;
+      background: var(--card);
+    }
+    .trust-avatars span:first-child { margin-left: 0; }
+    .trust-text { font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .trust-text strong { color: var(--text); }
+
+    /* hero right — video mosaic */
+    .hero-right {
+      position: relative;
+      background: var(--card);
+      overflow: hidden;
+      min-height: 360px;
+    }
+    .hero-mosaic {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 2fr 1fr;
+      height: 100%;
+      gap: 4px;
+    }
+    .mosaic-cell {
+      background: var(--card);
+      position: relative;
+      overflow: hidden;
+    }
+    .mosaic-cell:first-child {
+      grid-column: 1 / 3;
+    }
+    .mosaic-cell .video-embed {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .mosaic-cell .video-embed iframe {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .video-placeholder {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px;
+      background: var(--card);
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+    .video-placeholder:hover { filter: brightness(0.95); }
+.video-placeholder::before {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      border: 0 solid white; border-width: 12px 0 12px 20px;
+      transform: translate(-50%, -50%); pointer-events: none;
+    }
+    .video-placeholder:hover .play-btn { transform: scale(1.1); }
+
+    .video-embed { position: relative; width: 100%; height: 100%; }
+    .video-embed iframe { width: 100%; height: 100%; border: none; object-fit: cover; }
+    .video-embed .video-label { position: absolute; bottom: 8px; left: 8px; font-size: 11px; background: rgba(0,0,0,0.6); color: white; padding: 3px 8px; border-radius: 4px; }
+    
+    .value-video .video-embed { position: relative; width: 100%; height: 100%; min-height: 200px; }
+    .value-video .video-embed iframe { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .value-video .video-embed::after { content: ''; position: absolute; inset: 0; }
+    .how-video .video-embed { position: relative; width: 100%; height: 100%; min-height: 200px; }
+    .how-video .video-embed iframe { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .how-video .video-embed::after { content: ''; position: absolute; inset: 0; }
+    .play-btn::after {
+      content: '';
+      border-left: 16px solid var(--green);
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      margin-left: 4px;
+    }
+    .video-label {
+      font-size: 12px; font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      position: relative; z-index: 1;
+    }
+
+    /* floating accent card */
+    .hero-accent-card {
+      position: absolute; bottom: 2rem; left: -1.5rem;
+      background: var(--white);
+      border-radius: 14px;
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      display: flex; align-items: center; gap: 10px;
+      width: 200px;
+      z-index: 10;
+      animation: floatCard 0.8s 1s ease both;
+    }
+    @keyframes floatCard {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .accent-icon { font-size: 24px; flex-shrink: 0; }
+    .accent-text { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .accent-text strong { color: var(--text); font-size: 14px; display: block; }
+
+    /* ── ticker ──────────────────────────────────────────────── */
+    .ticker-wrap {
+      background: var(--green);
+      overflow: hidden;
+      padding: 12px 0;
+      white-space: nowrap;
+    }
+    .ticker {
+      display: inline-flex; gap: 0;
+      animation: tickerScroll 28s linear infinite;
+    }
+    .ticker:hover { animation-play-state: paused; }
+    .ticker-item {
+      display: inline-flex; align-items: center; gap: 10px;
+      color: rgba(255,255,255,0.9);
+      font-size: 13px; font-weight: 500;
+      padding: 0 2.5rem;
+    }
+    .ticker-item::before { content: '◆'; color: rgba(255,255,255,0.4); font-size: 8px; }
+    @keyframes tickerScroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ── stats ───────────────────────────────────────────────── */
+    .stats-section {
+      padding: 5rem 5vw;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-block {
+      background: var(--cream);
+      padding: 2.5rem 2rem;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem; font-weight: 900;
+      color: var(--green);
+      line-height: 1;
+      counter-reset: none;
+    }
+    .stat-label { font-size: 13px; color: var(--muted); font-weight: 500; line-height: 1.5; }
+
+    /* ── section title ───────────────────────────────────────── */
+    .section-header { margin-bottom: 3rem; }
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--brown);
+      margin-bottom: 0.8rem;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .section-title em { color: var(--green); font-style: normal; }
+    .section-sub { font-size: 15px; color: var(--muted); margin-top: 0.6rem; line-height: 1.7; }
+
+    /* ── value section ───────────────────────────────────────── */
+    .value-section { padding: 6rem 5vw; }
+    .value-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+
+    .value-video {
+      border-radius: 20px; overflow: hidden;
+      aspect-ratio: 4/3;
+      background: var(--card);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .value-cards { display: flex; flex-direction: column; gap: 1rem; }
+    .value-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.3rem 1.5rem;
+      display: flex; align-items: flex-start; gap: 1rem;
+      transition: all 0.25s;
+      cursor: default;
+    }
+    .value-card:hover {
+      border-color: rgba(74,107,60,0.3);
+      transform: translateX(4px);
+      box-shadow: 0 4px 20px rgba(74,107,60,0.08);
+    }
+    .val-icon {
+      width: 44px; height: 44px; flex-shrink: 0;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .val-icon.green { background: var(--green-light); }
+    .val-icon.brown { background: var(--brown-light); }
+    .val-body h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .val-body p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ── products ────────────────────────────────────────────── */
+    .products-section { padding: 6rem 5vw; background: var(--card); }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.2rem;
+    }
+    .product-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .product-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.1);
+      border-color: rgba(74,107,60,0.25);
+    }
+    .product-thumb {
+      height: 150px;
+      background: var(--green-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 56px;
+      position: relative;
+      transition: background 0.3s;
+    }
+    .product-card:hover .product-thumb { background: #DFF0CC; }
+    .badge {
+      position: absolute; top: 10px; right: 10px;
+      background: var(--brown); color: white;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 6px;
+      letter-spacing: 0.3px;
+    }
+    .wish-btn {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(255,255,255,0.85);
+      border: none; border-radius: 50%;
+      width: 32px; height: 32px;
+      font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .wish-btn:hover { transform: scale(1.15); }
+    .wish-btn.on { background: #fff0f0; }
+
+    .product-body { padding: 1rem 1.1rem; }
+    .product-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .product-meta { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+    .product-row  { display: flex; align-items: center; justify-content: space-between; }
+    .product-price { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--green); }
+    .add-btn {
+      background: var(--green); color: white;
+      border: none; border-radius: 8px;
+      padding: 8px 14px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .add-btn:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .add-btn.added { background: var(--brown); }
+
+    /* ── how it works ────────────────────────────────────────── */
+    .how-section { padding: 6rem 5vw; }
+    .how-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; }
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex; gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+      cursor: default;
+      transition: all 0.2s;
+    }
+    .step:last-child { border-bottom: none; }
+    .step:hover .step-num-wrap { background: var(--green); }
+    .step:hover .step-num-wrap span { color: white; }
+    .step-num-wrap {
+      width: 42px; height: 42px; flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--green-light);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .step-num-wrap span { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--green); transition: color 0.2s; }
+    .step-content h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+    .step-content p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    .how-video {
+      border-radius: 20px; overflow: hidden;
+      position: sticky; top: 5rem;
+      aspect-ratio: 9/16;
+      max-height: 580px;
+      background: var(--card);
+      border: 1px solid var(--border);
+    }
+
+    /* ── farmer story ────────────────────────────────────────── */
+    .farmer-section { padding: 6rem 5vw; background: var(--green); }
+    .farmer-inner {
+      max-width: 900px; margin: 0 auto;
+      display: grid; grid-template-columns: 280px 1fr; gap: 4rem; align-items: center;
+    }
+    .farmer-visual {
+      border-radius: 20px; overflow: hidden;
+      aspect-ratio: 3/4;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 80px;
+      position: relative;
+    }
+    .farmer-visual::after {
+      content: 'Your video here';
+      position: absolute; bottom: 16px; left: 0; right: 0;
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.5px;
+    }
+    .farmer-content .eyebrow { color: rgba(255,255,255,0.6); }
+    .farmer-content .section-title { color: white; }
+    .farmer-content p { color: rgba(255,255,255,0.8); font-size: 15px; line-height: 1.8; margin-top: 1.2rem; }
+    .farmer-stats { display: flex; gap: 2rem; margin-top: 2rem; }
+    .farmer-stat .num { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: white; }
+    .farmer-stat .lbl { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+
+    /* ── voucher ─────────────────────────────────────────────── */
+    .voucher-section { padding: 6rem 5vw; }
+    .voucher-card {
+      background: var(--brown-light);
+      border: 1px solid rgba(139,105,70,0.2);
+      border-radius: 24px;
+      padding: 4rem;
+      display: grid; grid-template-columns: 1fr auto; gap: 3rem;
+      align-items: center;
+      position: relative; overflow: hidden;
+    }
+    .voucher-card::before {
+      content: '';
+      position: absolute; right: -60px; top: -60px;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      border: 40px solid rgba(139,105,70,0.08);
+    }
+    .voucher-card::after {
+      content: '';
+      position: absolute; right: 60px; bottom: -80px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      border: 30px solid rgba(139,105,70,0.06);
+    }
+    .voucher-text .section-title { font-size: 2rem; }
+    .voucher-text p { color: var(--muted); font-size: 15px; line-height: 1.7; margin: 0.8rem 0 1.5rem; max-width: 480px; }
+    .voucher-amounts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .amount-pill {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 8px 20px;
+      font-size: 14px; font-weight: 600;
+      color: var(--brown);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .amount-pill:hover, .amount-pill.selected {
+      background: var(--brown); color: white; border-color: var(--brown);
+    }
+    .voucher-icon { font-size: 80px; position: relative; z-index: 1; line-height: 1; }
+
+    /* ── leaderboard ─────────────────────────────────────────── */
+    .leaderboard-section { padding: 4rem 5vw 6rem; background: var(--card); }
+    .lb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .lb-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem 1.5rem;
+      display: flex; align-items: center; gap: 1rem;
+      transition: all 0.25s;
+    }
+    .lb-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+    .lb-card.gold { border-color: #D4A843; background: #FEFBF0; }
+    .lb-rank { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--muted); min-width: 28px; }
+    .lb-card.gold .lb-rank { color: #D4A843; }
+    .lb-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .lb-orders { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .lb-trophy { margin-left: auto; font-size: 20px; }
+
+    /* ── footer ──────────────────────────────────────────────── */
+    footer { background:var(--text); color:rgba(255,255,255,.7); padding:3.5rem 5vw 1.5rem; }
+    .footer-main { display:grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr; gap:2.5rem; max-width:1200px; margin:0 auto 2rem; }
+    .footer-brand { display:flex; flex-direction:column; gap:1rem; }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:white; text-decoration:none; }
+    .footer-logo span { color:var(--brown); }
+    .footer-tagline { font-size:14px; line-height:1.5; color:rgba(255,255,255,.5); }
+    .footer-social { display:flex; gap:12px; }
+    .footer-social a { font-size:22px; text-decoration:none; transition:transform .2s; }
+    .footer-social a:hover { transform:scale(1.15); }
+    .footer-col { display:flex; flex-direction:column; gap:10px; }
+    .footer-col h4 { color:white; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .footer-col a { color:rgba(255,255,255,.55); font-size:13px; text-decoration:none; transition:color .2s; }
+    .footer-col a:hover { color:white; }
+    .footer-newsletter p { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:10px; }
+    .newsletter-form { display:flex; gap:8px; }
+    .newsletter-form input { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:10px 12px; font-size:13px; color:white; }
+    .newsletter-form input::placeholder { color:rgba(255,255,255,.35); }
+    .newsletter-form button { background:var(--green); color:white; border:none; border-radius:8px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+    .newsletter-form button:hover { background:var(--green-dark); }
+    .footer-bottom { border-top:1px solid rgba(255,255,255,.1); padding-top:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; max-width:1200px; margin:0 auto; }
+    .footer-bottom p { font-size:12px; color:rgba(255,255,255,.4); }
+    .footer-legal { display:flex; gap:1.5rem; }
+    .footer-legal a { font-size:12px; color:rgba(255,255,255,.4); text-decoration:none; transition:color .2s; }
+    .footer-legal a:hover { color:white; }
+    
+    @media(max-width:900px) { footer { grid-template-columns: 1fr 1fr; } .footer-main { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column:span 2; } }
+    @media(max-width:580px) { .footer-main { grid-template-columns: 1fr; } .footer-brand { grid-column:span 1; } }
+
+    /* ── toast ───────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 2rem; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text); color: white;
+      padding: 12px 22px; border-radius: 12px;
+      font-size: 14px; font-weight: 500;
+      z-index: 1000; opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── responsive ──────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-right { height: 320px; }
+      .hero-left { padding: 4rem 5vw 3rem; }
+      .hero-accent-card { display: none; }
+      .stats-section { grid-template-columns: 1fr 1fr; }
+      .value-layout, .how-layout, .farmer-inner { grid-template-columns: 1fr; }
+      .how-video { position: static; aspect-ratio: 16/9; max-height: 300px; }
+      .farmer-visual { aspect-ratio: 16/9; }
+      footer { grid-template-columns: 1fr; }
+      .voucher-card { grid-template-columns: 1fr; }
+      .voucher-icon { display: none; }
+    }
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .stats-section { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+</head>
+<body>
+
+<!-- ── NAVIGATION ─────────────────────────────────────────────── -->
+
+
+<!-- ── HERO ───────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-badge">B2B township grocery platform</div>
+    <h1>Stock your spaza<br><em><span class="underline-word">smarter.</span></em></h1>
+    <p class="hero-sub">Fresh produce delivered directly from local farmers. No minimum order. Prices that beat the supermarkets — every single time.</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary btn-lg" onclick="window.location.href='granum-auth.html?next=granum-profile.html'">Join as a spaza shop →</button>
+      <button class="btn btn-outline btn-lg" onclick="window.location.href='granum-auth.html?next=granum-profile.html'">I'm a farmer →</button>
+    </div>
+    <div class="hero-trust">
+      <div class="trust-avatars">
+        <span>👩🏾</span><span>👨🏿</span><span>👩🏽</span><span>👨🏾</span>
+      </div>
+      <div class="trust-text"><strong>340+ spaza shops</strong><br>already stocking smarter</div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="hero-mosaic">
+      <!-- Process Walkthrough video -->
+      <div class="mosaic-cell">
+        <div class="video-embed">
+          <iframe id="video-main" src="https://www.youtube.com/embed/fe9X7jJwejE?autoplay=0&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <span class="video-label">Process Walkthrough</span>
+        </div>
+      </div>
+      <!-- Spaza video -->
+      <div class="mosaic-cell">
+        <div class="video-embed" id="video-spaza-cell">
+          <iframe src="https://www.youtube.com/embed/-VtXmgTeYrw?autoplay=0&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <span class="video-label">Spaza Story</span>
+        </div>
+      </div>
+      <!-- Farmer video -->
+      <div class="mosaic-cell">
+        <div class="video-embed" id="video-farmer-cell">
+          <iframe src="https://www.youtube.com/embed/cuEUm2oZfo8?autoplay=0&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <span class="video-label">Farmer Story</span>
+        </div>
+      </div>
+    </div>
+
+    
+</section>
+
+<!-- ── TICKER ──────────────────────────────────────────────────── -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <!-- duplicated for seamless loop -->
+    <span class="ticker-item">Fresh tomatoes from Cape Town</span>
+    <span class="ticker-item">No minimum order, ever</span>
+    <span class="ticker-item">Supporting 87 local farmers</span>
+    <span class="ticker-item">18% cheaper than supermarkets</span>
+    <span class="ticker-item">24-hour township delivery</span>
+    <span class="ticker-item">Pay It Forward vouchers available</span>
+    <span class="ticker-item">Zero middlemen. Pure value.</span>
+    <span class="ticker-item">Fresh tomatoes from Cape Town</span>
+    <span class="ticker-item">No minimum order, ever</span>
+    <span class="ticker-item">Supporting 87 local farmers</span>
+    <span class="ticker-item">18% cheaper than supermarkets</span>
+    <span class="ticker-item">24-hour township delivery</span>
+    <span class="ticker-item">Pay It Forward vouchers available</span>
+    <span class="ticker-item">Zero middlemen. Pure value.</span>
+  </div>
+</div>
+
+<!-- ── STATS ───────────────────────────────────────────────────── -->
+<div class="stats-section stagger">
+  <div class="stat-block">
+    <div class="stat-num">340<span style="font-size:1.5rem">+</span></div>
+    <div class="stat-label">Active spaza shops<br>on the platform</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-num">87</div>
+    <div class="stat-label">Local farmers &<br>co-ops supplying</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-num">24<span style="font-size:1.5rem">hr</span></div>
+    <div class="stat-label">Average delivery<br>turnaround time</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-num">18<span style="font-size:1.5rem">%</span></div>
+    <div class="stat-label">Average savings vs<br>supermarket prices</div>
+  </div>
+</div>
+
+<!-- ── VALUE SECTION ───────────────────────────────────────────── -->
+<section class="value-section">
+  <div class="value-layout">
+    <div class="reveal-left">
+      <div class="value-video">
+        <div class="video-embed">
+          <iframe src="https://www.youtube.com/embed/eXWbJaz0gow?autoplay=1&mute=1&controls=0&rel=0&loop=1&playlist=eXWbJaz0gow" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+          <span class="video-label">Why Granum</span>
+        </div>
+      </div>
+    </div>
+    <div class="reveal-right">
+      <div class="section-header">
+        <span class="eyebrow">Why Granum</span>
+        <h2 class="section-title">Built for <em>township</em> business owners</h2>
+        <p class="section-sub">Everything spaza shop owners hate about buying stock — we fixed it.</p>
+      </div>
+      <div class="value-cards stagger">
+        <div class="value-card">
+          <div class="val-icon green">🚫</div>
+          <div class="val-body">
+            <h3>No travel, no carrying</h3>
+            <p>Order from your phone. Stock gets delivered to your door — no more early taxi rides to wholesale.</p>
+          </div>
+        </div>
+        <div class="value-card">
+          <div class="val-icon green">⚡</div>
+          <div class="val-body">
+            <h3>Fresh from the farm in 24hrs</h3>
+            <p>Direct from local farmers. No middlemen. Your tomatoes are still fresh on arrival.</p>
+          </div>
+        </div>
+        <div class="value-card">
+          <div class="val-icon brown">🛒</div>
+          <div class="val-body">
+            <h3>Buy exactly what you need</h3>
+            <p>No bulk minimums. Order 1kg or 50kg. Pay only for what you actually stock.</p>
+          </div>
+        </div>
+        <div class="value-card">
+          <div class="val-icon brown">💸</div>
+          <div class="val-body">
+            <h3>Prices that make real sense</h3>
+            <p>Direct from co-ops and farms. No supermarket markup. You sell more, farmers earn more.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURED PRODUCTS ───────────────────────────────────────── -->
+<section class="products-section" id="shop">
+  <div class="section-header reveal" style="max-width:600px">
+    <span class="eyebrow">Featured products</span>
+    <h2 class="section-title">Straight from the <em>farm</em></h2>
+    <p class="section-sub">Ready to stock. Click to add to your basket.</p>
+  </div>
+  <div class="product-grid stagger" id="product-grid"></div>
+</section>
+
+<!-- ── HOW IT WORKS ────────────────────────────────────────────── -->
+<section class="how-section" id="how">
+  <div class="how-layout">
+    <div>
+      <div class="section-header reveal">
+        <span class="eyebrow">How it works</span>
+        <h2 class="section-title">Shelves stocked in <em>3 steps</em></h2>
+      </div>
+      <div class="steps stagger">
+        <div class="step">
+          <div class="step-num-wrap"><span>1</span></div>
+          <div class="step-content">
+            <h3>Browse & add to basket</h3>
+            <p>Shop by category. See live prices and bulk discounts. Add what you need, nothing more.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num-wrap"><span>2</span></div>
+          <div class="step-content">
+            <h3>Checkout in 2 minutes</h3>
+            <p>Enter your spaza name and address. Pick your delivery date. No long forms, no fuss.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num-wrap"><span>3</span></div>
+          <div class="step-content">
+            <h3>Delivered to your door</h3>
+            <p>Local delivery drivers bring your order. Fresh, on time, every time.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num-wrap"><span>4</span></div>
+          <div class="step-content">
+            <h3>Stock, sell, repeat</h3>
+            <p>Your customers stay happy. Reorder in seconds from your full order history.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="reveal-right">
+      <div class="how-video">
+        <div class="video-embed">
+          <iframe src="https://www.youtube.com/embed/XCki-G03w4I?autoplay=1&mute=1&controls=0&rel=0&loop=1&playlist=XCki-G03w4I" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+          <span class="video-label">How It Works</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FARMER STORY ────────────────────────────────────────────── -->
+<section class="farmer-section">
+  <div class="farmer-inner">
+    <div class="farmer-visual reveal-left">👩🏾‍🌾</div>
+    <div class="farmer-content reveal-right">
+      <span class="eyebrow">Farmer of the week</span>
+      <h2 class="section-title">Meet Nomsa — tomato farmer from Cape Town</h2>
+      <p>She's been farming in the Cape Flats for 15 years. Before Granum, she sold at weekend markets, earning just enough. Now she supplies 23 spaza shops weekly and employs 4 local workers.</p>
+      <p style="margin-top:0.8rem">Every tomato you buy from Granum puts money directly in her pocket — no middlemen, no supermarket cut.</p>
+      <div class="farmer-stats">
+        <div class="farmer-stat"><div class="num">23</div><div class="lbl">Spazas supplied</div></div>
+        <div class="farmer-stat"><div class="num">4</div><div class="lbl">Workers employed</div></div>
+        <div class="farmer-stat"><div class="num">15yr</div><div class="lbl">Farming experience</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── VOUCHERS ────────────────────────────────────────────────── -->
+<section class="voucher-section" id="vouchers">
+  <div class="voucher-card reveal">
+    <div class="voucher-text">
+      <span class="eyebrow">Community feature</span>
+      <h2 class="section-title">Feed a neighbour.<br><em>Pay it forward.</em></h2>
+      <p>Buy a grocery voucher for a township family in need. They redeem it at any Granum-powered spaza shop for fresh essentials. Direct impact — no admin, no middlemen.</p>
+      <div class="voucher-amounts">
+        <div class="amount-pill selected" onclick="selectAmount(this, 20)">R20</div>
+        <div class="amount-pill" onclick="selectAmount(this, 50)">R50</div>
+        <div class="amount-pill" onclick="selectAmount(this, 100)">R100</div>
+      </div>
+      <button class="btn btn-primary btn-lg" onclick="window.location.href='granum-vouchers.html'">Buy a voucher →</button>
+    </div>
+    <div class="voucher-icon">🎟️</div>
+  </div>
+</section>
+
+<!-- ── LEADERBOARD ─────────────────────────────────────────────── -->
+<section class="leaderboard-section" id="leaderboard">
+  <div class="section-header reveal" style="max-width:500px">
+    <span class="eyebrow">Community</span>
+    <h2 class="section-title">Top spaza shops <em>this month</em></h2>
+    <p class="section-sub">The most active shops on the platform — ordering smart, selling more.</p>
+  </div>
+  <div class="lb-grid stagger">
+    <div class="lb-card gold">
+      <div class="lb-rank">1</div>
+      <div><div class="lb-name">Thabo's Corner Shop</div><div class="lb-orders">47 orders this month · Soweto</div></div>
+      <div class="lb-trophy">🏆</div>
+    </div>
+    <div class="lb-card">
+      <div class="lb-rank">2</div>
+      <div><div class="lb-name">Mama Rose's Spaza</div><div class="lb-orders">32 orders this month · Khayelitsha</div></div>
+    </div>
+    <div class="lb-card">
+      <div class="lb-rank">3</div>
+      <div><div class="lb-name">Speedway Groceries</div><div class="lb-orders">28 orders this month · Langa</div></div>
+    </div>
+    <div class="lb-card">
+      <div class="lb-rank">4</div>
+      <div><div class="lb-name">Nkosi Family Store</div><div class="lb-orders">21 orders this month · Mitchells Plain</div></div>
+    </div>
+    <div class="lb-card">
+      <div class="lb-rank">5</div>
+      <div><div class="lb-name">Unity Mini Mart</div><div class="lb-orders">17 orders this month · Gugulethu</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-main">
+    <div class="footer-brand">
+      <a href="granum-home.html" class="footer-logo">Granum</a>
+      <p class="footer-tagline">Connecting spaza shops to farmers & manufacturers.</p>
+      <div class="footer-social">
+        <a href="#" title="Facebook">📘</a>
+        <a href="#" title="Instagram">📸</a>
+        <a href="#" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Shop</h4>
+      <a href="granum-shop.html">Browse Products</a>
+      <a href="granum-cart.html">My Cart</a>
+      <a href="granum-vouchers.html">Gift Vouchers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="granum-about.html">About Us</a>
+      <a href="granum-howitworks.html">How It Works</a>
+      <a href="granum-leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="granum-contact.html">Contact Us</a>
+      <a href="#">FAQs</a>
+      <a href="#">Delivery Info</a>
+    </div>
+    <div class="footer-col footer-newsletter">
+      <h4>Stay Updated</h4>
+      <p>Get the latest deals and updates.</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Your email" />
+        <button>Subscribe</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Granum. All rights reserved.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // hey, here's our product data
+  const products = [
+    { id:1, name:"Fresh Tomatoes",    price:12, category:"Fresh Produce",   bulkDiscount:"5kg save 10%",    farmer:"Nomsa's Farm",       location:"Cape Town", image:"🍅" },
+    { id:2, name:"Brown Bread",        price:15, category:"Packaged Goods",  bulkDiscount:"Buy 5 save 15%",  farmer:"Soweto Bakery",      location:"Soweto",    image:"🍞" },
+    { id:3, name:"Maize Meal (5kg)",   price:28, category:"Packaged Goods",  bulkDiscount:null,              farmer:"Ace Milling",        location:"Gauteng",   image:"🌽" },
+    { id:4, name:"Fresh Eggs (dozen)", price:32, category:"Dairy & Eggs",    bulkDiscount:"2 dozen for R58", farmer:"Happy Hens",         location:"Limpopo",   image:"🥚" },
+    { id:5, name:"Onions (1kg)",       price:18, category:"Fresh Produce",   bulkDiscount:"5kg for R80",     farmer:"Green Valley Farms", location:"North West",image:"🧅" },
+    { id:6, name:"Cooking Oil (2L)",   price:45, category:"Packaged Goods",  bulkDiscount:null,              farmer:"Sunflower Co-op",    location:"Mpumalanga",image:"🫒" },
+    { id:7, name:"Fresh Milk (1L)",    price:19, category:"Dairy & Eggs",    bulkDiscount:"3 for R54",       farmer:"Clover Direct",      location:"KZN",       image:"🥛" },
+    { id:8, name:"Potatoes (2kg)",     price:25, category:"Fresh Produce",   bulkDiscount:"5kg for R55",     farmer:"Highland Farms",     location:"Free State",image:"🥔" }
+  ];
+
+  // don't judge my localStorage logic lol
+  let cart     = JSON.parse(localStorage.getItem('lh_cart')     || '[]');
+  let wishlist = JSON.parse(localStorage.getItem('lh_wishlist') || '[]');
+
+  function updateCartBadge() {
+    if (window.syncBadge) { window.syncBadge(); return; }
+    const total = cart.reduce((s, i) => s + i.qty, 0);
+    const el = document.getElementById('cart-count');
+    if (el) el.textContent = total;
+  }
+
+  // adding to cart — updates badge and shows toast
+  function addToCart(id) {
+    const p = products.find(x => x.id === id);
+    const existing = cart.find(x => x.id === id);
+    if (existing) existing.qty++;
+    else cart.push({ id, name: p.name, price: p.price, qty: 1 });
+    localStorage.setItem('lh_cart', JSON.stringify(cart));
+    updateCartBadge();
+    const btn = document.getElementById('add-' + id);
+    btn.textContent = 'Added ✓';
+    btn.classList.add('added');
+    setTimeout(() => { btn.textContent = 'Add to basket'; btn.classList.remove('added'); }, 1600);
+    showToast(p.image + ' ' + p.name + ' added to basket!');
+  }
+
+  // wishlist toggle — persisted to localStorage
+  function toggleWishlist(id) {
+    const idx = wishlist.indexOf(id);
+    if (idx === -1) wishlist.push(id);
+    else wishlist.splice(idx, 1);
+    localStorage.setItem('lh_wishlist', JSON.stringify(wishlist));
+    const btn = document.getElementById('wish-' + id);
+    const on = wishlist.includes(id);
+    btn.textContent = on ? '❤️' : '🤍';
+    btn.classList.toggle('on', on);
+    showToast(on ? '❤️ Added to wishlist!' : '🤍 Removed from wishlist');
+  }
+
+  // rendering the product grid
+  function renderProducts() {
+    document.getElementById('product-grid').innerHTML = products.map(p => `
+      <div class="product-card">
+        <div class="product-thumb">
+          <span style="font-size:56px">${p.image}</span>
+          ${p.bulkDiscount ? `<span class="badge">${p.bulkDiscount}</span>` : ''}
+          <button class="wish-btn ${wishlist.includes(p.id) ? 'on' : ''}" id="wish-${p.id}" onclick="toggleWishlist(${p.id})">${wishlist.includes(p.id) ? '❤️' : '🤍'}</button>
+        </div>
+        <div class="product-body">
+          <div class="product-name">${p.name}</div>
+          <div class="product-meta">📍 ${p.farmer} · ${p.location}</div>
+          <div class="product-row">
+            <span class="product-price">R${p.price}</span>
+            <button class="add-btn" id="add-${p.id}" onclick="addToCart(${p.id})">Add to basket</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // toast notifications
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // Add video to hero mosaic - click placeholder, then enter YouTube video ID
+  window.addVideo = function(id, el) {
+    const videoId = prompt('Enter YouTube video ID (e.g., fe9X7jJwejE):');
+    if (!videoId) return;
+    
+    // Replace placeholder with actual embed
+    el.outerHTML = `<div class="video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
+    showToast('Video added!');
+  }
+
+  // voucher amount selection
+  function selectAmount(el, amount) {
+    document.querySelectorAll('.amount-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // nav scrolled state
+  window.addEventListener('scroll', () => {
+    document.getElementById('main-nav').classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // scroll reveal — watches elements entering viewport
+  function initReveal() {
+    const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .stagger');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    els.forEach(el => obs.observe(el));
+  }
+
+  // animated counters for stat numbers
+  function animateCounters() {
+    const nums = document.querySelectorAll('.stat-num');
+    const targets = [340, 87, 24, 18];
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        const target = parseInt(el.textContent);
+        const suffix = el.innerHTML.replace(/\d+/, '');
+        let cur = 0;
+        const step = Math.ceil(target / 40);
+        const timer = setInterval(() => {
+          cur = Math.min(cur + step, target);
+          el.innerHTML = cur + suffix;
+          if (cur >= target) clearInterval(timer);
+        }, 30);
+        obs.unobserve(el);
+      });
+    }, { threshold: 0.5 });
+    nums.forEach(n => obs.observe(n));
+  }
+
+  // kick everything off
+  renderProducts();
+  updateCartBadge();
+  initReveal();
+  animateCounters();
+</script>
+</body>
+</html>

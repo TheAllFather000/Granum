@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — Food Vouchers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --green:#4A6B3C; --green-dark:#3A552E; --green-light:#EAF3DE;
+      --brown:#8B6946; --brown-light:#F5EDE0;
+      --cream:#FDFAF6; --card:#F2EEE7;
+      --text:#2E2C28; --muted:#7A776F;
+      --white:#FFFFFF;
+      --border:rgba(60,55,45,0.11); --border-mid:rgba(60,55,45,0.2);
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); padding:2rem 5vw; }
+    h1 { font-size:1.8rem; margin-bottom:1.5rem; color:var(--green); }
+    
+    .tabs { display:flex; gap:.5rem; margin-bottom:1.5rem; border-bottom:2px solid var(--border); }
+    .tab {
+      padding:.75rem 1.5rem; cursor:pointer; font-weight:600; color:var(--muted);
+      border-bottom:3px solid transparent; margin-bottom:-2px; transition:.2s;
+    }
+    .tab:hover { color:var(--text); }
+    .tab.active { color:var(--green); border-bottom-color:var(--green); }
+    
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    
+    .card {
+      background:var(--white); border:1px solid var(--border); border-radius:12px;
+      padding:1.5rem; max-width:500px; box-shadow:0 2px 8px rgba(0,0,0,0.04);
+    }
+    .card h2 { font-size:1.2rem; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+    
+    label { display:block; font-size:.85rem; font-weight:600; margin-bottom:.4rem; color:var(--muted); }
+    input, select, textarea {
+      width:100%; padding:.7rem .9rem; border:1px solid var(--border); border-radius:8px;
+      font-size:.95rem; font-family:inherit; margin-bottom:1rem; background:var(--white);
+    }
+    input:focus, select:focus, textarea:focus { outline:none; border-color:var(--green); }
+    
+    .radio-group { display:flex; gap:1rem; margin-bottom:1rem; }
+    .radio-group label { 
+      display:flex; align-items:center; gap:.4rem; cursor:pointer; 
+      padding:.6rem 1rem; border:1px solid var(--border); border-radius:8px; 
+      transition:.2s; margin-bottom:0;
+    }
+    .radio-group input[type="radio"] { width:auto; margin:0; }
+    .radio-group input:checked + span { color:var(--green); }
+    
+    button {
+      background:var(--green); color:white; border:none; padding:.8rem 1.5rem; 
+      border-radius:8px; font-size:.95rem; font-weight:600; cursor:pointer; 
+      transition:.2s; width:100%;
+    }
+    button:hover { background:var(--green-dark); }
+    button.secondary { background:var(--card); color:var(--text); }
+    button.secondary:hover { background:var(--border); }
+    
+    .voucher-info {
+      background:var(--green-light); border-radius:8px; padding:1rem;
+      margin:.5rem 0 1rem; display:none;
+    }
+    .voucher-info.show { display:block; }
+    .voucher-info strong { color:var(--green-dark); }
+    
+    .history-item {
+      background:var(--white); border:1px solid var(--border); border-radius:8px;
+      padding:1rem; margin-bottom:.75rem;
+    }
+    .history-item .code { font-family:monospace; font-weight:600; }
+    .history-item .meta { font-size:.85rem; color:var(--muted); margin-top:.3rem; }
+    .history-item .status { 
+      display:inline-block; padding:.2rem .5rem; border-radius:4px; font-size:.75rem; font-weight:700;
+      text-transform:uppercase; 
+    }
+    .status-active { background:#dcfce7; color:#166534; }
+    .status-used { background:#fee2e2; color:#991b1b; }
+    
+    .empty { color:var(--muted); font-style:italic; }
+  </style>
+</head>
+<body>
+  <h1>🎁 Food Vouchers — Community Support</h1>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="buy">Buy a Voucher</div>
+    <div class="tab" data-tab="redeem">Redeem Voucher</div>
+    <div class="tab" data-tab="history">Voucher History</div>
+  </div>
+  
+  <!-- TAB 1: BUY VOUCHER -->
+  <div id="buy" class="tab-content active">
+    <div class="card">
+      <h2>🎁 Buy a Food Voucher</h2>
+      <p style="color:var(--muted); margin-bottom:1rem; font-size:.9rem;">
+        Purchase a digital food voucher for a township family. They can redeem it at any Granum spaza shop.
+      </p>
+      
+      <label>Recipient phone number (required)</label>
+      <input type="tel" id="buy-phone" placeholder="+27851234567" />
+      
+      <label>Recipient name (optional)</label>
+      <input type="text" id="buy-name" placeholder="e.g. Mama Rose" />
+      
+      <label>Voucher amount</label>
+      <div class="radio-group">
+        <label><input type="radio" name="amount" value="2000" checked /><span>R20</span></label>
+        <label><input type="radio" name="amount" value="5000" /><span>R50</span></label>
+        <label><input type="radio" name="amount" value="10000" /><span>R100</span></label>
+      </div>
+      
+      <label>Your name (optional)</label>
+      <input type="text" id="buy-donor" placeholder="Your name" />
+      
+      <label>Personal message (optional)</label>
+      <textarea id="buy-message" rows="2" placeholder="Enjoy this gift!"></textarea>
+      
+      <button onclick="buyVoucher()">💚 Purchase Voucher</button>
+    </div>
+  </div>
+  
+  <!-- TAB 2: REDEEM VOUCHER -->
+  <div id="redeem" class="tab-content">
+    <div class="card">
+      <h2>💸 Redeem a Voucher</h2>
+      
+      <label>Voucher code</label>
+      <input type="text" id="redeem-code" placeholder="LH-XXXXX" style="text-transform:uppercase;" />
+      
+      <label>Your spaza shop name</label>
+      <input type="text" id="redeem-shop" placeholder="e.g. Thabo's Corner" />
+      
+      <button onclick="checkBalance()" class="secondary" style="margin-bottom:1rem;">🔍 Check Balance</button>
+      
+      <div id="voucher-info" class="voucher-info">
+        <div>Balance: <strong id="info-balance">R0.00</strong></div>
+        <div>Recipient: <strong id="info-recipient"></strong></div>
+      </div>
+      
+      <label>Amount to redeem (R)</label>
+      <input type="number" id="redeem-amount" placeholder="0.00" min="0" step="0.01" />
+      
+      <button onclick="redeemVoucher()">💸 Redeem Amount</button>
+    </div>
+  </div>
+  
+  <!-- TAB 3: HISTORY -->
+  <div id="history" class="tab-content">
+    <div class="card">
+      <h2>📜 Voucher History</h2>
+      
+      <label style="margin-top:1rem;">Your phone (for created vouchers)</label>
+      <input type="tel" id="history-phone" placeholder="+27851234567" onchange="loadHistory()" />
+      
+      <label>Your shop name (for redemptions)</label>
+      <input type="text" id="history-shop" placeholder="Shop name" onchange="loadHistory()" />
+      
+      <div style="margin-top:1.5rem;">
+        <h3 style="font-size:.9rem; color:var(--muted); margin-bottom:.5rem;">MY CREATED VOUCHERS</h3>
+        <div id="my-vouchers">
+          <p class="empty">Enter phone above to see your vouchers</p>
+        </div>
+      </div>
+      
+      <div style="margin-top:1.5rem;">
+        <h3 style="font-size:.9rem; color:var(--muted); margin-bottom:.5rem;">MY REDEMPTIONS</h3>
+        <div id="my-redemptions">
+          <p class="empty">Enter shop name above to see redemptions</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const API = 'http://localhost:3000/fsm';
+    let currentVoucher = null;
+    
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+    
+    // Generate voucher code
+    function generateCode() {
+      return 'LH-' + Date.now().toString(36).substring(2, 7).toUpperCase();
+    }
+    
+    // Buy voucher
+    async function buyVoucher() {
+      const phone = document.getElementById('buy-phone').value.trim();
+      if (!phone) return alert('Please enter recipient phone number');
+      
+      const amount = document.querySelector('input[name="amount"]:checked').value;
+      const code = generateCode();
+      
+      const payload = {
+        code: code,
+        recipient_phone: phone,
+        recipient_name: document.getElementById('buy-name').value.trim() || 'Friend',
+        sender_name: document.getElementById('buy-donor').value.trim() || 'Anonymous',
+        message: document.getElementById('buy-message').value.trim() || 'Enjoy this gift!',
+        initial_cents: parseInt(amount),
+        balance_cents: parseInt(amount),
+        status: 'active'
+      };
+      
+      try {
+        const res = await fetch(`${API}/vouchers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (res.ok) {
+          alert(`✅ Voucher sent!\n\nR${amount/100} voucher has been sent to ${phone}.\nThe recipient will receive the voucher code via SMS.`);
+        } else {
+          const err = await res.json();
+          alert('Error: ' + (err.error || 'Failed to create voucher'));
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+    
+    // Check balance
+    async function checkBalance() {
+      const code = document.getElementById('redeem-code').value.trim().toUpperCase();
+      if (!code) return alert('Enter voucher code');
+      
+      try {
+        const res = await fetch(`${API}/vouchers/${code}`);
+        if (!res.ok) return alert('Invalid voucher code');
+        
+        const { voucher } = await res.json();
+        
+        if (voucher.status === 'fully_used') {
+          alert('Voucher has been fully used');
+          return;
+        }
+        if (voucher.status === 'expired') {
+          alert('Voucher has expired');
+          return;
+        }
+        
+        currentVoucher = voucher;
+        document.getElementById('voucher-info').classList.add('show');
+        document.getElementById('info-balance').textContent = 'R' + (voucher.balance_cents / 100).toFixed(2);
+        document.getElementById('info-recipient').textContent = voucher.recipient_name || 'N/A';
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+    
+    // Redeem voucher
+    async function redeemVoucher() {
+      const code = document.getElementById('redeem-code').value.trim().toUpperCase();
+      const shop = document.getElementById('redeem-shop').value.trim();
+      const amount = parseFloat(document.getElementById('redeem-amount').value) * 100;
+      
+      if (!code || !shop || !amount) {
+        return alert('Fill in code, shop name, and amount');
+      }
+      
+      try {
+        const res = await fetch(`${API}/vouchers/${code}/redeem`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount_cents: Math.round(amount), spaza_name: shop })
+        });
+        
+        if (res.ok) {
+          const result = await res.json();
+          alert(`✅ Redeemed R${(amount/100).toFixed(2)}!\nRemaining: R${(result.new_balance_cents / 100).toFixed(2)}`);
+          document.getElementById('voucher-info').classList.remove('show');
+          currentVoucher = null;
+        } else {
+          const err = await res.json();
+          alert('Error: ' + (err.error || err.message));
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+    
+    // Load history
+    async function loadHistory() {
+      const phone = document.getElementById('history-phone').value.trim();
+      const shop = document.getElementById('history-shop').value.trim();
+      
+      // Load created vouchers
+      if (phone) {
+        try {
+          const res = await fetch(`${API}/vouchers?phone=${encodeURIComponent(phone)}`);
+          const { vouchers } = await res.json();
+          
+          const container = document.getElementById('my-vouchers');
+          if (!vouchers || vouchers.length === 0) {
+            container.innerHTML = '<p class="empty">No vouchers found</p>';
+          } else {
+            container.innerHTML = vouchers.map(v => `
+              <div class="history-item">
+                <div class="code">${v.code}</div>
+                <div class="meta">R${v.initial_cents/100} | ${v.status}</div>
+                <div class="meta">${v.recipient_phone} (${v.recipient_name})</div>
+                <button onclick="deleteVoucher('${v.code}')" class="secondary" style="margin-top:.5rem; width:auto; padding:.4rem .8rem; font-size:.8rem;">🗑️ Delete</button>
+              </div>
+            `).join('');
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      
+      // Load redemptions
+      if (shop) {
+        try {
+          const res = await fetch(`${API}/redemptions?spaza_name=${encodeURIComponent(shop)}`);
+          const { redemptions } = await res.json();
+          
+          const container = document.getElementById('my-redemptions');
+          if (!redemptions || redemptions.length === 0) {
+            container.innerHTML = '<p class="empty">No redemptions found</p>';
+          } else {
+            container.innerHTML = redemptions.map(r => `
+              <div class="history-item">
+                <div class="code">Voucher: ${r.voucher_code}</div>
+                <div class="meta">R${r.amount_cents/100} on ${new Date(r.redeemed_at).toLocaleDateString()}</div>
+              </div>
+            `).join('');
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    
+    // Delete voucher
+    async function deleteVoucher(code) {
+      if (!confirm('Delete this voucher?')) return;
+      
+      try {
+        const res = await fetch(`${API}/vouchers/${code}`, { method: 'DELETE' });
+        if (res.ok) {
+          alert('Voucher deleted');
+          loadHistory();
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>

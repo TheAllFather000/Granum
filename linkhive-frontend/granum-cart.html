@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — Checkout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --green:#4A6B3C; --green-dark:#3A552E; --green-light:#EAF3DE;
+      --brown:#8B6946; --brown-light:#F5EDE0;
+      --cream:#FDFAF6; --card:#F2EEE7;
+      --text:#2E2C28; --muted:#7A776F;
+      --white:#FFFFFF;
+      --border:rgba(60,55,45,0.11); --border-mid:rgba(60,55,45,0.2);
+      --red:#C0392B; --red-light:#FBEAEA;
+    }
+    html { scroll-behavior:smooth; }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); overflow-x:hidden; }
+
+    /* ── nav ─────────────────────────────────────────────────── */
+    nav {
+      position:sticky; top:0; z-index:300;
+      background:rgba(253,250,246,0.93);
+      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--border);
+      padding:0 5vw; display:flex; align-items:center; justify-content:space-between; height:60px;
+    }
+    .nav-logo { font-family:'Playfair Display',serif; font-size:20px; font-weight:900; color:var(--green); text-decoration:none; }
+    .nav-logo span { color:var(--brown); }
+    .nav-links { display:flex; gap:1.8rem; list-style:none; }
+    .nav-links a { text-decoration:none; color:var(--muted); font-size:14px; font-weight:500; transition:color .2s; }
+    .nav-links a:hover { color:var(--green); }
+    .cart-trigger {
+      background:var(--green); color:white; border:none; border-radius:9px;
+      padding:8px 16px; font-size:14px; font-weight:500; cursor:pointer;
+      display:flex; align-items:center; gap:8px;
+      font-family:'DM Sans',sans-serif; transition:background .2s; position:relative;
+    }
+    .cart-trigger:hover { background:var(--green-dark); }
+    .cart-count {
+      background:var(--brown); color:white; border-radius:50%;
+      width:19px; height:19px; font-size:11px; font-weight:700;
+      display:flex; align-items:center; justify-content:center;
+    }
+
+    /* ── cart drawer ─────────────────────────────────────────── */
+    .cart-backdrop {
+      position:fixed; inset:0; background:rgba(30,28,24,.45);
+      z-index:400; opacity:0; pointer-events:none; transition:opacity .28s;
+    }
+    .cart-backdrop.open { opacity:1; pointer-events:all; }
+
+    .cart-drawer {
+      position:fixed; top:0; right:0; bottom:0;
+      width:min(420px,100vw);
+      background:var(--white);
+      z-index:401;
+      display:flex; flex-direction:column;
+      transform:translateX(100%);
+      transition:transform .32s cubic-bezier(.4,0,.2,1);
+      box-shadow:-8px 0 40px rgba(0,0,0,.12);
+    }
+    .cart-drawer.open { transform:none; }
+
+    .drawer-head {
+      padding:1.2rem 1.4rem;
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+      flex-shrink:0;
+    }
+    .drawer-head h2 { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; }
+    .drawer-head .item-count { font-size:13px; color:var(--muted); margin-left:8px; }
+    .drawer-close { background:var(--card); border:none; border-radius:50%; width:34px; height:34px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .18s; }
+    .drawer-close:hover { background:var(--border-mid); }
+
+    .drawer-body { flex:1; overflow-y:auto; padding:1rem 1.4rem; }
+    .drawer-body::-webkit-scrollbar { width:4px; }
+    .drawer-body::-webkit-scrollbar-thumb { background:var(--border-mid); border-radius:2px; }
+
+    /* empty state */
+    .cart-empty { text-align:center; padding:3rem 1rem; color:var(--muted); }
+    .cart-empty .empty-icon { font-size:40px; display:block; margin-bottom:1rem; }
+    .cart-empty p { font-size:14px; line-height:1.6; }
+    .cart-empty a { color:var(--green); text-decoration:none; font-weight:600; }
+
+    /* cart item */
+    .cart-item {
+      display:flex; align-items:center; gap:12px;
+      padding:12px 0; border-bottom:1px solid var(--border);
+      animation:slideIn .25s ease;
+    }
+    @keyframes slideIn { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:none} }
+    .cart-item:last-child { border-bottom:none; }
+    .item-emoji { width:48px; height:48px; background:var(--green-light); border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+    .item-info { flex:1; min-width:0; }
+    .item-name { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .item-price { font-size:12px; color:var(--muted); margin-top:2px; }
+    .item-controls { display:flex; align-items:center; gap:6px; }
+    .qty-btn { width:28px; height:28px; border-radius:7px; background:var(--card); border:1px solid var(--border); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; font-family:'DM Sans',sans-serif; }
+    .qty-btn:hover { background:var(--border-mid); }
+    .item-qty { min-width:22px; text-align:center; font-size:13px; font-weight:700; }
+    .item-subtotal { font-size:13px; font-weight:700; color:var(--text); min-width:44px; text-align:right; }
+    .item-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:4px; transition:color .18s; }
+    .item-remove:hover { color:var(--red); }
+
+    /* promo code */
+    .promo-row { display:flex; gap:8px; margin:1rem 0; }
+    .promo-input { flex:1; background:var(--card); border:1.5px solid var(--border); border-radius:9px; padding:9px 12px; font-size:13px; color:var(--text); font-family:'DM Sans',sans-serif; outline:none; transition:border-color .2s; }
+    .promo-input:focus { border-color:var(--green); background:var(--white); }
+    .promo-btn { background:var(--green-light); color:var(--green-dark); border:none; border-radius:9px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; transition:all .18s; }
+    .promo-btn:hover { background:var(--green); color:white; }
+    .promo-tag { display:inline-flex; align-items:center; gap:6px; background:var(--green-light); color:var(--green-dark); border-radius:7px; padding:4px 10px; font-size:12px; font-weight:600; margin-bottom:.5rem; }
+    .promo-remove { background:none; border:none; cursor:pointer; color:var(--green-dark); font-size:14px; }
+
+    /* drawer footer */
+    .drawer-foot {
+      padding:1.2rem 1.4rem;
+      border-top:1px solid var(--border);
+      flex-shrink:0;
+      background:var(--white);
+    }
+    .totals-row { display:flex; justify-content:space-between; font-size:13px; color:var(--muted); margin-bottom:6px; }
+    .totals-row.discount { color:var(--green); }
+    .totals-divider { border:none; border-top:1px solid var(--border); margin:10px 0; }
+    .totals-total { display:flex; justify-content:space-between; font-size:16px; font-weight:700; color:var(--text); margin-bottom:1rem; }
+    .totals-total span:last-child { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--green); }
+    .checkout-btn {
+      width:100%; background:var(--green); color:white; border:none; border-radius:12px;
+      padding:13px; font-size:15px; font-weight:600; cursor:pointer;
+      font-family:'DM Sans',sans-serif; transition:all .2s;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .checkout-btn:hover { background:var(--green-dark); transform:translateY(-1px); }
+    .checkout-btn:disabled { opacity:.5; pointer-events:none; }
+    .clear-btn { width:100%; background:none; border:none; color:var(--muted); font-size:12px; font-weight:500; cursor:pointer; margin-top:10px; font-family:'DM Sans',sans-serif; transition:color .18s; }
+    .clear-btn:hover { color:var(--red); }
+
+    /* ── checkout page ───────────────────────────────────────── */
+    .checkout-page { display:none; }
+    .checkout-page.show { display:block; }
+
+    .checkout-header {
+      padding:2.5rem 5vw 2rem;
+      border-bottom:1px solid var(--border);
+    }
+    .breadcrumb { font-size:12px; color:var(--muted); margin-bottom:.8rem; display:flex; align-items:center; gap:6px; }
+    .breadcrumb a { color:var(--green); text-decoration:none; }
+    .breadcrumb span { opacity:.4; }
+    .checkout-header h1 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3.5vw,2.4rem); font-weight:900; letter-spacing:-.5px; }
+    .checkout-header h1 em { color:var(--green); font-style:normal; }
+
+    /* progress steps */
+    .checkout-steps {
+      display:flex; align-items:center; gap:0;
+      padding:1.2rem 5vw;
+      background:var(--white);
+      border-bottom:1px solid var(--border);
+      overflow-x:auto;
+    }
+    .step-item { display:flex; align-items:center; gap:8px; white-space:nowrap; }
+    .step-circle {
+      width:28px; height:28px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700;
+      background:var(--card); color:var(--muted); border:1.5px solid var(--border-mid);
+      transition:all .3s;
+    }
+    .step-circle.done  { background:var(--green); color:white; border-color:var(--green); }
+    .step-circle.active{ background:var(--green-light); color:var(--green-dark); border-color:var(--green); }
+    .step-label { font-size:13px; font-weight:500; color:var(--muted); transition:color .3s; }
+    .step-label.active { color:var(--green); font-weight:600; }
+    .step-label.done   { color:var(--text); }
+    .step-sep { width:32px; height:1.5px; background:var(--border); margin:0 4px; flex-shrink:0; transition:background .3s; }
+    .step-sep.done { background:var(--green); }
+
+    /* checkout body */
+    .checkout-body { padding:2rem 5vw 5rem; display:grid; grid-template-columns:1fr 360px; gap:2.5rem; align-items:start; }
+
+    /* section card */
+    .co-card {
+      background:var(--white); border:1px solid var(--border);
+      border-radius:18px; padding:1.6rem 1.8rem; margin-bottom:1.2rem;
+      display:none;
+    }
+    .co-card.show { display:block; }
+    .co-card h3 { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; margin-bottom:1.4rem; }
+
+    /* form fields */
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    .field { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+    .field label { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; }
+    .field label .req { color:var(--green); }
+    .field input, .field select, .field textarea {
+      background:var(--card); border:1.5px solid var(--border); border-radius:10px;
+      padding:10px 13px; font-size:14px; color:var(--text);
+      font-family:'DM Sans',sans-serif; outline:none; transition:all .2s; width:100%;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--green); background:var(--white); }
+    .field input.err { border-color:var(--red); }
+    .field select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A776F' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; padding-right:36px; }
+
+    /* ── payment methods ─────────────────────────────────────── */
+    .payment-methods { display:flex; flex-direction:column; gap:10px; }
+    .pay-option {
+      border:1.5px solid var(--border); border-radius:14px; overflow:hidden;
+      cursor:pointer; transition:border-color .2s;
+    }
+    .pay-option.selected { border-color:var(--green); }
+    .pay-header {
+      display:flex; align-items:center; gap:12px;
+      padding:14px 16px;
+    }
+    .pay-radio {
+      width:18px; height:18px; border-radius:50%;
+      border:2px solid var(--border-mid); flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      transition:all .2s; background:var(--white);
+    }
+    .pay-option.selected .pay-radio { border-color:var(--green); background:var(--green); }
+    .pay-radio::after { content:''; width:6px; height:6px; border-radius:50%; background:white; display:none; }
+    .pay-option.selected .pay-radio::after { display:block; }
+    .pay-icon { font-size:22px; width:36px; text-align:center; }
+    .pay-label { flex:1; }
+    .pay-label h4 { font-size:14px; font-weight:600; color:var(--text); }
+    .pay-label p  { font-size:12px; color:var(--muted); margin-top:2px; }
+    .pay-logos { display:flex; gap:5px; margin-left:auto; }
+    .pay-logo { background:var(--card); border:1px solid var(--border); border-radius:5px; padding:3px 7px; font-size:10px; font-weight:700; color:var(--muted); letter-spacing:.5px; }
+
+    /* expandable payment form */
+    .pay-form { max-height:0; overflow:hidden; transition:max-height .32s ease, padding .25s ease; padding:0 16px; }
+    .pay-option.selected .pay-form { max-height:400px; padding-bottom:16px; }
+
+    /* card number input with brand icon */
+    .card-num-wrap { position:relative; }
+    .card-num-wrap input { padding-right:52px; }
+    .card-brand { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:18px; }
+
+    /* voucher check */
+    .voucher-check { display:flex; gap:8px; }
+    .voucher-check input { flex:1; }
+    .voucher-check-btn { background:var(--green-light); color:var(--green-dark); border:none; border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .18s; white-space:nowrap; }
+    .voucher-check-btn:hover { background:var(--green); color:white; }
+    .voucher-status { font-size:12px; margin-top:6px; font-weight:500; display:none; }
+    .voucher-status.ok  { color:var(--green); display:block; }
+    .voucher-status.bad { color:var(--red);   display:block; }
+
+    /* EFT details */
+    .eft-box { background:var(--card); border-radius:10px; padding:1rem 1.1rem; }
+    .eft-row { display:flex; justify-content:space-between; padding:4px 0; font-size:13px; border-bottom:1px solid var(--border); }
+    .eft-row:last-child { border:none; }
+    .eft-row span:first-child { color:var(--muted); }
+    .eft-row span:last-child { font-weight:600; }
+
+    /* ── order summary sidebar ───────────────────────────────── */
+    .summary-card { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:1.4rem 1.5rem; position:sticky; top:80px; }
+    .summary-card h3 { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; margin-bottom:1.2rem; }
+    .summary-items { max-height:280px; overflow-y:auto; margin-bottom:1rem; }
+    .summary-items::-webkit-scrollbar { width:3px; }
+    .summary-items::-webkit-scrollbar-thumb { background:var(--border-mid); border-radius:2px; }
+    .summary-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+    .summary-item:last-child { border:none; }
+    .s-emoji { width:38px; height:38px; background:var(--green-light); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .s-name { flex:1; font-size:13px; font-weight:500; color:var(--text); }
+    .s-qty  { font-size:12px; color:var(--muted); }
+    .s-price{ font-size:13px; font-weight:700; color:var(--text); }
+    .summary-lines { padding-top:.8rem; }
+    .s-line { display:flex; justify-content:space-between; font-size:13px; color:var(--muted); margin-bottom:6px; }
+    .s-line.discount { color:var(--green); font-weight:600; }
+    .s-divider { border:none; border-top:1px solid var(--border); margin:10px 0; }
+    .s-total { display:flex; justify-content:space-between; font-size:16px; font-weight:700; color:var(--text); }
+    .s-total span:last-child { font-family:'Playfair Display',serif; color:var(--green); font-size:1.2rem; }
+    .s-note { font-size:11px; color:var(--muted); margin-top:.8rem; line-height:1.5; text-align:center; }
+
+    /* step nav buttons */
+    .step-nav { display:flex; gap:10px; margin-top:1rem; }
+    .step-back { background:var(--card); color:var(--text); border:none; border-radius:10px; padding:11px 20px; font-size:14px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .18s; }
+    .step-back:hover { background:var(--border-mid); }
+    .step-next { flex:1; background:var(--green); color:white; border:none; border-radius:10px; padding:12px; font-size:14px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .step-next:hover { background:var(--green-dark); transform:translateY(-1px); }
+
+    /* ── confirmation modal ──────────────────────────────────── */
+    .confirm-backdrop {
+      position:fixed; inset:0; background:rgba(30,28,24,.55);
+      z-index:500; display:flex; align-items:center; justify-content:center;
+      padding:1.5rem; opacity:0; pointer-events:none; transition:opacity .28s;
+    }
+    .confirm-backdrop.open { opacity:1; pointer-events:all; }
+    .confirm-modal {
+      background:var(--white); border-radius:24px; padding:2.5rem 2rem;
+      text-align:center; max-width:400px; width:100%;
+      transform:translateY(20px) scale(.97);
+      transition:transform .3s ease, opacity .28s; opacity:0;
+    }
+    .confirm-backdrop.open .confirm-modal { transform:none; opacity:1; }
+    .confirm-icon { font-size:52px; display:block; margin-bottom:1rem; animation:popIn .4s ease; }
+    @keyframes popIn { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+    .confirm-modal h2 { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:900; margin-bottom:.6rem; }
+    .confirm-modal h2 em { color:var(--green); font-style:normal; }
+    .confirm-modal p { font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:.5rem; }
+    .order-num { display:inline-block; background:var(--green-light); color:var(--green-dark); border-radius:8px; padding:6px 14px; font-size:14px; font-weight:700; margin:8px 0 1.2rem; letter-spacing:.5px; }
+    .confirm-actions { display:flex; flex-direction:column; gap:8px; margin-top:1.2rem; }
+    .conf-btn-primary { background:var(--green); color:white; border:none; border-radius:11px; padding:12px; font-size:14px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background .18s; }
+    .conf-btn-primary:hover { background:var(--green-dark); }
+    .conf-btn-ghost { background:none; color:var(--muted); border:none; font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; padding:6px; transition:color .18s; }
+    .conf-btn-ghost:hover { color:var(--text); }
+
+    /* ── toast ───────────────────────────────────────────────── */
+    .toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(12px); background:var(--text); color:white; padding:11px 20px; border-radius:10px; font-size:13px; font-weight:500; z-index:600; opacity:0; transition:all .28s; pointer-events:none; white-space:nowrap; max-width:90vw; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ── footer ──────────────────────────────────────────────── */
+    footer { background:var(--text); color:rgba(255,255,255,.7); padding:3.5rem 5vw 1.5rem; }
+    .footer-main { display:grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr; gap:2.5rem; max-width:1200px; margin:0 auto 2rem; }
+    .footer-brand { display:flex; flex-direction:column; gap:1rem; }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:white; text-decoration:none; }
+    .footer-logo span { color:var(--brown); }
+    .footer-tagline { font-size:14px; line-height:1.5; color:rgba(255,255,255,.5); }
+    .footer-social { display:flex; gap:12px; }
+    .footer-social a { font-size:22px; text-decoration:none; transition:transform .2s; }
+    .footer-social a:hover { transform:scale(1.15); }
+    .footer-col { display:flex; flex-direction:column; gap:10px; }
+    .footer-col h4 { color:white; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .footer-col a { color:rgba(255,255,255,.55); font-size:13px; text-decoration:none; transition:color .2s; }
+    .footer-col a:hover { color:white; }
+    .footer-newsletter p { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:10px; }
+    .newsletter-form { display:flex; gap:8px; }
+    .newsletter-form input { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:10px 12px; font-size:13px; color:white; }
+    .newsletter-form input::placeholder { color:rgba(255,255,255,.35); }
+    .newsletter-form button { background:var(--green); color:white; border:none; border-radius:8px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+    .newsletter-form button:hover { background:var(--green-dark); }
+    .footer-bottom { border-top:1px solid rgba(255,255,255,.1); padding-top:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; max-width:1200px; margin:0 auto; }
+    .footer-bottom p { font-size:12px; color:rgba(255,255,255,.4); }
+    .footer-legal { display:flex; gap:1.5rem; }
+    .footer-legal a { font-size:12px; color:rgba(255,255,255,.4); text-decoration:none; transition:color .2s; }
+    .footer-legal a:hover { color:white; }
+    @media(max-width:900px) { .footer-main { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column:span 2; } }
+    @media(max-width:580px) { .footer-main { grid-template-columns: 1fr; } .footer-brand { grid-column:span 1; } }
+
+    /* ── responsive ──────────────────────────────────────────── */
+    @media(max-width:860px) { .checkout-body{grid-template-columns:1fr} .summary-card{position:static} }
+    @media(max-width:600px) { .nav-links{display:none} .field-row{grid-template-columns:1fr} .checkout-steps{gap:2px} .step-sep{width:16px} }
+  </style>
+
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+</head>
+<body>
+
+
+
+<!-- ── CART DRAWER ────────────────────────────────────────────── -->
+<div class="cart-backdrop" id="cart-backdrop" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cart-drawer">
+  <div class="drawer-head">
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <h2>Your basket</h2>
+      <span class="item-count" id="drawer-item-count"></span>
+    </div>
+    <button class="drawer-close" onclick="closeCart()">✕</button>
+  </div>
+
+  <div class="drawer-body" id="drawer-body">
+    <!-- populated by JS -->
+  </div>
+
+  <div class="drawer-foot" id="drawer-foot">
+    <div id="promo-section">
+      <div id="promo-tag-wrap"></div>
+      <div class="promo-row">
+        <input class="promo-input" id="promo-input" placeholder="Promo or voucher code" />
+        <button class="promo-btn" onclick="applyPromo()">Apply</button>
+      </div>
+    </div>
+    <div class="totals-row"><span>Subtotal</span><span id="subtotal-val">R0</span></div>
+    <div class="totals-row discount" id="discount-row" style="display:none"><span id="discount-label">Promo discount</span><span id="discount-val">−R0</span></div>
+    <div class="totals-row"><span>Delivery</span><span id="delivery-val">R25</span></div>
+    <hr class="totals-divider" />
+    <div class="totals-total"><span>Total</span><span id="total-val">R25</span></div>
+    <button class="checkout-btn" id="checkout-btn" onclick="goToCheckout()">Proceed to checkout →</button>
+    <button class="clear-btn" onclick="clearCart()">Remove all items</button>
+  </div>
+</div>
+
+<!-- ── CHECKOUT PAGE ──────────────────────────────────────────── -->
+<div class="checkout-page" id="checkout-page">
+
+  <div class="checkout-header">
+    <div class="breadcrumb">
+      <a href="granum-home.html">Home</a> <span>›</span>
+      <a href="#" onclick="openCart(); return false">Basket</a> <span>›</span>
+      <span>Checkout</span>
+    </div>
+    <h1>Almost <em>there.</em></h1>
+  </div>
+
+  <!-- progress -->
+  <div class="checkout-steps">
+    <div class="step-item">
+      <div class="step-circle active" id="sc1">1</div>
+      <span class="step-label active" id="sl1">Delivery</span>
+    </div>
+    <div class="step-sep" id="ss1"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc2">2</div>
+      <span class="step-label" id="sl2">Payment</span>
+    </div>
+    <div class="step-sep" id="ss2"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc3">3</div>
+      <span class="step-label" id="sl3">Review</span>
+    </div>
+  </div>
+
+  <div class="checkout-body">
+    <div>
+
+      <!-- STEP 1: delivery -->
+      <div class="co-card show" id="step1">
+        <h3>Delivery details</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Spaza shop name <span class="req">*</span></label>
+            <input type="text" id="shop-name" placeholder="e.g. Thabo's Corner Shop" />
+          </div>
+          <div class="field">
+            <label>Owner name <span class="req">*</span></label>
+            <input type="text" id="owner-name" placeholder="e.g. Thabo Nkosi" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Phone number <span class="req">*</span></label>
+            <input type="tel" id="phone" placeholder="e.g. 071 234 5678" />
+          </div>
+          <div class="field">
+            <label>Province <span class="req">*</span></label>
+            <select id="province">
+              <option value="">Select province</option>
+              <option>Western Cape</option>
+              <option>Gauteng</option>
+              <option>KwaZulu-Natal</option>
+              <option>Limpopo</option>
+              <option>Free State</option>
+              <option>North West</option>
+              <option>Mpumalanga</option>
+              <option>Eastern Cape</option>
+              <option>Northern Cape</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Street address or landmark <span class="req">*</span></label>
+          <input type="text" id="address" placeholder="e.g. Corner of Vilakazi & Ngakane St, Soweto" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Area / Township</label>
+            <input type="text" id="area" placeholder="e.g. Khayelitsha" />
+          </div>
+          <div class="field">
+            <label>Preferred delivery date <span class="req">*</span></label>
+            <input type="date" id="delivery-date" />
+            <p id="delivery-estimate" style="font-size:12px;color:var(--green);margin-top:6px"></p>
+          </div>
+        </div>
+        <div class="field">
+          <label>Delivery instructions (optional)</label>
+          <input type="text" id="instructions" placeholder="e.g. Drop at back gate, call on arrival" />
+        </div>
+        <div class="step-nav">
+          <button class="step-next" onclick="goStep(2)">Continue to payment →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: payment -->
+      <div class="co-card" id="step2">
+        <h3>Payment method</h3>
+        <div class="payment-methods" id="payment-methods">
+
+          <!-- Card -->
+          <div class="pay-option" id="pay-card" onclick="selectPayment('card')">
+            <div class="pay-header">
+              <div class="pay-radio"></div>
+              <div class="pay-icon">💳</div>
+              <div class="pay-label"><h4>Debit / Credit card</h4><p>Visa, Mastercard, Amex</p></div>
+              <div class="pay-logos">
+                <span class="pay-logo">VISA</span>
+                <span class="pay-logo">MC</span>
+              </div>
+            </div>
+            <div class="pay-form">
+              <div class="field">
+                <label>Cardholder name</label>
+                <input type="text" id="card-name" placeholder="As it appears on the card" />
+              </div>
+              <div class="field">
+                <label>Card number</label>
+                <div class="card-num-wrap">
+                  <input type="text" id="card-num" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)" />
+                  <span class="card-brand" id="card-brand">💳</span>
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Expiry</label>
+                  <input type="text" id="card-exp" placeholder="MM / YY" maxlength="7" oninput="formatExpiry(this)" />
+                </div>
+                <div class="field">
+                  <label>CVV</label>
+                  <input type="text" id="card-cvv" placeholder="•••" maxlength="4" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Voucher -->
+          <div class="pay-option" id="pay-voucher" onclick="selectPayment('voucher')">
+            <div class="pay-header">
+              <div class="pay-radio"></div>
+              <div class="pay-icon">🎟️</div>
+              <div class="pay-label"><h4>Granum voucher</h4><p>Redeem a Pay It Forward voucher</p></div>
+              <div class="pay-logos"><span class="pay-logo" style="background:var(--green-light);color:var(--green-dark);border-color:var(--green)">LH</span></div>
+            </div>
+            <div class="pay-form">
+              <div class="field">
+                <label>Voucher code</label>
+                <div class="voucher-check">
+                  <input type="text" id="voucher-code" placeholder="e.g. LH-VOUCHER-42A9F" style="text-transform:uppercase" />
+                  <button class="voucher-check-btn" onclick="checkVoucher()">Check balance</button>
+                </div>
+                <div class="voucher-status" id="voucher-status"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Voucher Balance -->
+          <div class="pay-option" id="pay-voucher-balance" onclick="selectPayment('voucher-balance')">
+            <div class="pay-header">
+              <div class="pay-radio"></div>
+              <div class="pay-icon">💰</div>
+              <div class="pay-label"><h4>Voucher Balance</h4><p>Use your Granum voucher balance</p></div>
+              <div class="pay-logos"><span class="pay-logo" style="background:var(--green-light);color:var(--green-dark);border-color:var(--green)">LH</span></div>
+            </div>
+            <div class="pay-form">
+              <div class="field">
+                <div id="voucher-balance-display" style="font-size:14px;color:var(--green);font-weight:600">Loading...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EFT -->
+          <div class="pay-option" id="pay-eft" onclick="selectPayment('eft')">
+            <div class="pay-header">
+              <div class="pay-radio"></div>
+              <div class="pay-icon">🏦</div>
+              <div class="pay-label"><h4>EFT / Bank transfer</h4><p>Manual transfer — order held 24hrs</p></div>
+            </div>
+            <div class="pay-form">
+              <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">Transfer the order total to the account below, then upload your proof of payment. Your order will be confirmed once payment reflects.</p>
+              <div class="eft-box">
+                <div class="eft-row"><span>Bank</span><span>First National Bank</span></div>
+                <div class="eft-row"><span>Account name</span><span>Granum (Pty) Ltd</span></div>
+                <div class="eft-row"><span>Account number</span><span>62847391052</span></div>
+                <div class="eft-row"><span>Branch code</span><span>250655</span></div>
+                <div class="eft-row"><span>Reference</span><span id="eft-ref">LH-ORDER</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cash on delivery -->
+          <div class="pay-option" id="pay-cash" onclick="selectPayment('cash')">
+            <div class="pay-header">
+              <div class="pay-radio"></div>
+              <div class="pay-icon">💵</div>
+              <div class="pay-label"><h4>Cash on delivery</h4><p>Pay when your order arrives</p></div>
+            </div>
+            <div class="pay-form">
+              <p style="font-size:13px;color:var(--muted);line-height:1.6">Have the exact amount ready for the delivery driver. A receipt will be issued on delivery.</p>
+            </div>
+          </div>
+
+          <!-- SnapScan / QR -->
+          <div class="pay-option" id="pay-snap" onclick="selectPayment('snap')">
+            <div class="pay-header">
+              <div class="pay-radio"></div>
+              <div class="pay-icon">📱</div>
+              <div class="pay-label"><h4>SnapScan / QR pay</h4><p>Scan & pay instantly via mobile</p></div>
+              <div class="pay-logos"><span class="pay-logo">QR</span></div>
+            </div>
+            <div class="pay-form">
+              <div style="background:var(--card);border-radius:12px;padding:1.2rem;text-align:center">
+                <div style="width:100px;height:100px;background:var(--white);border:2px solid var(--border);border-radius:10px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:40px">📷</div>
+                <p style="font-size:12px;color:var(--muted);line-height:1.5">A real QR code will appear here when connected to a payment provider. For this demo it's a placeholder.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="step-nav">
+          <button class="step-back" onclick="goStep(1)">← Back</button>
+          <button class="step-next" onclick="goStep(3)">Review order →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: review -->
+      <div class="co-card" id="step3">
+        <h3>Review your order</h3>
+        <div id="review-delivery-summary" style="margin-bottom:1.2rem;"></div>
+        <div id="review-payment-summary" style="margin-bottom:1.5rem;"></div>
+        <div style="background:var(--brown-light);border:1px solid rgba(139,105,70,.18);border-radius:12px;padding:1rem 1.1rem;font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1.5rem">
+          ⚠️ <strong style="color:var(--text)">Demo only</strong> — no real payment is taken. In production, a 5% commission is charged to the supplier. Spaza shops pay only the listed product price.
+        </div>
+        <div class="step-nav">
+          <button class="step-back" onclick="goStep(2)">← Back</button>
+          <button class="step-next" onclick="placeOrder()" style="background:var(--brown)">✅ Place order</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- order summary -->
+    <div class="summary-card">
+      <h3>Order summary</h3>
+      <div class="summary-items" id="summary-items"></div>
+      <div class="summary-lines">
+        <div class="s-line"><span>Subtotal</span><span id="s-subtotal">R0</span></div>
+        <div class="s-line discount" id="s-discount-row" style="display:none"><span id="s-discount-label">Discount</span><span id="s-discount">−R0</span></div>
+        <div class="s-line"><span>Delivery fee</span><span>R25</span></div>
+        <hr class="s-divider" />
+        <div class="s-total"><span>Total</span><span id="s-total">R25</span></div>
+      </div>
+      <p class="s-note">🔒 Secure checkout. Your details are never shared with third parties.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── LANDING (no items in cart yet) ────────────────────────── -->
+<div id="landing-view" style="text-align:center;padding:6rem 5vw">
+  <div style="font-size:52px;margin-bottom:1.2rem">🛒</div>
+  <h2 style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;margin-bottom:.8rem">Your basket is empty</h2>
+  <p style="color:var(--muted);font-size:15px;max-width:380px;margin:0 auto 2rem;line-height:1.7">Browse the shop to add products, or visit a spaza shop or farmer profile to stock up.</p>
+  <a href="granum-shop.html" style="display:inline-flex;align-items:center;gap:8px;background:var(--green);color:white;text-decoration:none;border-radius:11px;padding:12px 24px;font-size:15px;font-weight:600;transition:background .2s" onmouseover="this.style.background='#3A552E'" onmouseout="this.style.background='#4A6B3C'">Browse the marketplace →</a>
+</div>
+
+<!-- ── CONFIRMATION MODAL ─────────────────────────────────────── -->
+<div class="confirm-backdrop" id="confirm-backdrop">
+  <div class="confirm-modal">
+    <span class="confirm-icon">🎉</span>
+    <h2>Order <em>placed!</em></h2>
+    <p>Your order has been sent to the suppliers. You'll get an SMS confirmation shortly.</p>
+    <div class="order-num" id="order-num">LH-ORDER-00000</div>
+    <p style="font-size:13px;color:var(--muted)">Expected delivery: <strong id="confirm-date">Tomorrow</strong></p>
+    <p id="confirm-total" style="font-size:14px;font-weight:600;margin-top:8px"></p>
+    <p id="confirm-payment" style="font-size:13px;color:var(--muted);margin-top:4px"></p>
+    <p id="confirm-notif" style="font-size:12px;color:var(--green);font-weight:600;margin-top:6px;display:none"></p>
+    <div class="confirm-actions">
+      <button class="conf-btn-primary" onclick="finishOrder()">Back to home</button>
+      <button class="conf-btn-ghost" id="view-orders-btn" onclick="showToast('Order history coming soon!')">View my orders</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-main">
+    <div class="footer-brand">
+      <a href="granum-home.html" class="footer-logo">Granum</a>
+      <p class="footer-tagline">Connecting spaza shops to farmers & manufacturers.</p>
+      <div class="footer-social">
+        <a href="#" title="Facebook">📘</a>
+        <a href="#" title="Instagram">📸</a>
+        <a href="#" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Shop</h4>
+      <a href="granum-shop.html">Browse Products</a>
+      <a href="granum-cart.html">My Cart</a>
+      <a href="granum-vouchers.html">Gift Vouchers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="granum-about.html">About Us</a>
+      <a href="granum-howitworks.html">How It Works</a>
+      <a href="granum-leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="granum-contact.html">Contact Us</a>
+      <a href="#">FAQs</a>
+      <a href="#">Delivery Info</a>
+    </div>
+    <div class="footer-col footer-newsletter">
+      <h4>Stay Updated</h4>
+      <p>Get the latest deals and updates.</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Your email" />
+        <button>Subscribe</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Granum. All rights reserved.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── mock voucher codes ─────────────────────────────────────────
+  const VOUCHERS = {
+    'LH-VOUCHER-42A9F': { balance: 100, label: 'R100 community voucher' },
+    'LH-VOUCHER-FREE50': { balance: 50,  label: 'R50 Pay It Forward' },
+    'LH-VOUCHER-DEMO20': { balance: 20,  label: 'R20 demo voucher' },
+  };
+  const PROMO_CODES = {
+    'SPAZA10':  { pct: 10, label: '10% off — SPAZA10' },
+    'LINKHIVE': { pct: 15, label: '15% off — LINKHIVE' },
+    'FRESH5':   { pct: 5,  label: '5% off — FRESH5' },
+  };
+
+  // ── state ──────────────────────────────────────────────────────
+  let cart          = [];
+  let activePromo   = null;   // { pct, label }
+  let activeVoucher = null;   // { balance, label }
+  let activePayment = null;   // 'card' | 'voucher' | 'eft' | 'cash' | 'snap'
+  let currentStep   = 1;
+
+  // ── cart helpers ───────────────────────────────────────────────
+  function loadCart() {
+    cart = JSON.parse(localStorage.getItem('lh_cart') || '[]');
+  }
+
+  function saveCartLS() {
+    localStorage.setItem('lh_cart', JSON.stringify(cart));
+  }
+
+  function getSubtotal() {
+    // Use totalPrice if available (exact total), otherwise fall back to price * qty
+    return cart.reduce((s, i) => s + (i.totalPrice || (i.price * i.qty)), 0);
+  }
+
+  function getDiscount() {
+    const sub = getSubtotal();
+    if (activeVoucher) return Math.min(activeVoucher.balance, sub);
+    if (activePromo)   return Math.round(sub * activePromo.pct / 100);
+    return 0;
+  }
+
+  function getTotal() {
+    return Math.max(0, getSubtotal() - getDiscount() + 25);
+  }
+
+  function updateCartBadge() {
+    if (window.syncBadge) { window.syncBadge(); return; }
+    const count = cart.reduce((s, i) => s + i.qty, 0);
+    const el = document.getElementById('cart-count');
+    if (el) el.textContent = count;
+  }
+
+  // ── open / close cart ─────────────────────────────────────────
+  function openCart() {
+    loadCart();
+    renderDrawer();
+    document.getElementById('cart-backdrop').classList.add('open');
+    document.getElementById('cart-drawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCart() {
+    document.getElementById('cart-backdrop').classList.remove('open');
+    document.getElementById('cart-drawer').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // ── render drawer ─────────────────────────────────────────────
+  function renderDrawer() {
+    const body  = document.getElementById('drawer-body');
+    const foot  = document.getElementById('drawer-foot');
+    const count = cart.length; // Unique products, not total quantity
+
+    document.getElementById('drawer-item-count').textContent = count ? `${count} item${count !== 1 ? 's' : ''}` : '';
+
+    if (!cart.length) {
+      body.innerHTML = `
+        <div class="cart-empty">
+          <span class="empty-icon">🧺</span>
+          <p>Nothing here yet.<br>Head to the <a href="granum-shop.html">shop</a> or a <a href="granum-profile.html">seller profile</a> to add products.</p>
+        </div>`;
+      foot.style.display = 'none';
+      return;
+    }
+
+    foot.style.display = '';
+
+    // items: price = per unit, totalPrice = total, unitQty = total kg/units
+    body.innerHTML = cart.map((item, idx) => `
+      <div class="cart-item" id="citem-${idx}">
+        <div class="item-emoji">${item.emoji || '📦'}</div>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">R${item.price} per ${item.unit || 'unit'}</div>
+        </div>
+        <div class="item-controls">
+          <button class="qty-btn" onclick="changeItemQty(${idx}, -1)">−</button>
+          <span class="item-qty">${item.unitQty || item.qty}</span>
+          <button class="qty-btn" onclick="changeItemQty(${idx}, 1)">＋</button>
+        </div>
+        <span class="item-subtotal">R${item.totalPrice || (item.price * item.qty)}</span>
+        <button class="item-remove" onclick="removeItem(${idx})" title="Remove">✕</button>
+      </div>`).join('');
+
+    // promo tag
+    const tagWrap = document.getElementById('promo-tag-wrap');
+    if (activePromo) {
+      tagWrap.innerHTML = `<div class="promo-tag">🏷️ ${activePromo.label} <button class="promo-remove" onclick="removePromo()">✕</button></div>`;
+    } else if (activeVoucher) {
+      tagWrap.innerHTML = `<div class="promo-tag">🎟️ ${activeVoucher.label} <button class="promo-remove" onclick="removePromo()">✕</button></div>`;
+    } else {
+      tagWrap.innerHTML = '';
+    }
+
+    // totals
+    const sub      = getSubtotal();
+    const discount = getDiscount();
+    document.getElementById('subtotal-val').textContent = `R${sub}`;
+    document.getElementById('delivery-val').textContent = 'R25';
+    document.getElementById('total-val').textContent    = `R${getTotal()}`;
+
+    const drow = document.getElementById('discount-row');
+    if (discount) {
+      drow.style.display = '';
+      document.getElementById('discount-label').textContent = activeVoucher ? 'Voucher applied' : 'Promo discount';
+      document.getElementById('discount-val').textContent   = `−R${discount}`;
+    } else {
+      drow.style.display = 'none';
+    }
+
+    // checkout btn state
+    document.getElementById('checkout-btn').disabled = !cart.length;
+  }
+
+  function getProductEmoji(name) {
+    const map = { tomato:'🍅', bread:'🍞', maize:'🌽', egg:'🥚', oil:'🫒', milk:'🥛', potato:'🥔', pepper:'🫑', spinach:'🥬', cucumber:'🥒', marrow:'🥒', rye:'🍞', roll:'🍞', vetkoek:'🫓' };
+    const n = name.toLowerCase();
+    for (const [k, v] of Object.entries(map)) { if (n.includes(k)) return v; }
+    return '📦';
+  }
+
+  function changeItemQty(idx, delta) {
+    cart[idx].qty = Math.max(1, cart[idx].qty + delta);
+    cart[idx].unitQty = cart[idx].qty; // Also update unitQty for display
+    // Update totalPrice based on new qty
+    if (cart[idx].price && cart[idx].qty) {
+      cart[idx].totalPrice = cart[idx].price * cart[idx].qty;
+    }
+    saveCartLS();
+    updateCartBadge();
+    renderDrawer();
+  }
+
+  function removeItem(idx) {
+    cart.splice(idx, 1);
+    saveCartLS();
+    updateCartBadge();
+    renderDrawer();
+    showToast('Item removed from basket');
+  }
+
+  function clearCart() {
+    cart = [];
+    saveCartLS();
+    updateCartBadge();
+    renderDrawer();
+    showToast('Basket cleared');
+  }
+
+  // ── promo / voucher ────────────────────────────────────────────
+  function applyPromo() {
+    const code = document.getElementById('promo-input').value.trim().toUpperCase();
+    if (!code) return;
+
+    if (VOUCHERS[code]) {
+      activeVoucher = VOUCHERS[code];
+      activePromo   = null;
+      document.getElementById('promo-input').value = '';
+      renderDrawer();
+      showToast(`🎟️ Voucher applied — R${activeVoucher.balance} off!`);
+      return;
+    }
+    if (PROMO_CODES[code]) {
+      activePromo   = PROMO_CODES[code];
+      activeVoucher = null;
+      document.getElementById('promo-input').value = '';
+      renderDrawer();
+      showToast(`🏷️ ${activePromo.pct}% discount applied!`);
+      return;
+    }
+    showToast('❌ Invalid code. Try SPAZA10 or LH-VOUCHER-DEMO20');
+  }
+
+  function removePromo() {
+    activePromo = null;
+    activeVoucher = null;
+    renderDrawer();
+    showToast('Discount removed');
+  }
+
+  // ── go to checkout ─────────────────────────────────────────────
+  function goToCheckout() {
+    closeCart();
+
+    // require login
+    if (window.granumAuth && !window.granumAuth.isLoggedIn()) {
+      showToast('Please sign in to checkout');
+      setTimeout(() => {
+        window.location.href = 'granum-auth.html?next=granum-cart.html%3Fcheckout%3D1';
+      }, 900);
+      return;
+    }
+
+    document.getElementById('landing-view').style.display = 'none';
+    document.getElementById('checkout-page').classList.add('show');
+    currentStep = 1;
+    renderCheckoutSummary();
+    goStep(1);
+
+    // pre-fill delivery fields from logged-in user if available
+    const user = window.granumAuth?.getUser();
+    if (user) {
+      const nameEl = document.getElementById('owner-name');
+      if (nameEl && !nameEl.value) {
+        nameEl.value = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      }
+    }
+
+    const dateInput = document.getElementById('delivery-date');
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + 2); // max 48 hours
+    dateInput.min   = tomorrow.toISOString().split('T')[0];
+    dateInput.max   = maxDate.toISOString().split('T')[0];
+    dateInput.value = tomorrow.toISOString().split('T')[0];
+    
+    // Show delivery estimate
+    const updateEstimate = () => {
+      const selected = new Date(dateInput.value);
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const diffDays = Math.ceil((selected - today) / (1000 * 60 * 60 * 24));
+      const estEl = document.getElementById('delivery-estimate');
+      if (diffDays === 1) estEl.textContent = '📦 Estimated delivery: Tomorrow';
+      else if (diffDays === 2) estEl.textContent = '📦 Estimated delivery: In 2 days';
+      else estEl.textContent = '';
+    };
+    dateInput.addEventListener('change', updateEstimate);
+    updateEstimate();
+    
+    document.getElementById('eft-ref').textContent = 'LH-' + Math.random().toString(36).slice(2,8).toUpperCase();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Load voucher balance if logged in
+    loadVoucherBalance();
+  }
+
+  // ── step navigation ────────────────────────────────────────────
+  function goStep(n) {
+    // validate current step before advancing
+    if (n > currentStep) {
+      if (currentStep === 1 && !validateDelivery()) return;
+      if (currentStep === 2 && !validatePayment()) return;
+    }
+
+    currentStep = n;
+
+    // show/hide cards
+    [1,2,3].forEach(i => {
+      document.getElementById('step'+i).classList.toggle('show', i === n);
+    });
+
+    // update progress indicators
+    [1,2,3].forEach(i => {
+      const circle = document.getElementById('sc'+i);
+      const label  = document.getElementById('sl'+i);
+      circle.className = 'step-circle' + (i < n ? ' done' : i === n ? ' active' : '');
+      circle.textContent = i < n ? '✓' : i;
+      label.className = 'step-label' + (i < n ? ' done' : i === n ? ' active' : '');
+      if (i < 3) {
+        document.getElementById('ss'+i).className = 'step-sep' + (i < n ? ' done' : '');
+      }
+    });
+
+    // populate review step
+    if (n === 3) buildReviewStep();
+
+    window.scrollTo({ top: document.getElementById('checkout-page').offsetTop - 70, behavior: 'smooth' });
+  }
+
+  // ── validation ────────────────────────────────────────────────
+  function validateDelivery() {
+    const fields = ['shop-name','owner-name','phone','province','address','delivery-date'];
+    let ok = true;
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      const empty = !el.value.trim();
+      el.classList.toggle('err', empty);
+      if (empty) ok = false;
+    });
+    if (!ok) showToast('Please fill in all required fields');
+    return ok;
+  }
+
+  function validatePayment() {
+    if (!activePayment) { showToast('Please select a payment method'); return false; }
+    if (activePayment === 'card') {
+      const num = document.getElementById('card-num').value.replace(/\s/g,'');
+      const exp = document.getElementById('card-exp').value;
+      const cvv = document.getElementById('card-cvv').value;
+      if (num.length < 16 || !exp || cvv.length < 3) { showToast('Please complete your card details'); return false; }
+    }
+    return true;
+  }
+
+  // ── payment selection ──────────────────────────────────────────
+  function selectPayment(method) {
+    activePayment = method;
+    ['card','voucher','voucher-balance','eft','cash','snap'].forEach(m => {
+      document.getElementById('pay-'+m).classList.toggle('selected', m === method);
+    });
+  }
+
+  function checkVoucher() {
+    const code = document.getElementById('voucher-code').value.trim().toUpperCase();
+    const el   = document.getElementById('voucher-status');
+    if (VOUCHERS[code]) {
+      el.textContent = `✅ Valid — R${VOUCHERS[code].balance} available`;
+      el.className   = 'voucher-status ok';
+      activeVoucher  = VOUCHERS[code];
+      activePromo    = null;
+    } else {
+      el.textContent = '❌ Invalid voucher code';
+      el.className   = 'voucher-status bad';
+    }
+  }
+  
+  // Load user's voucher balance
+  async function loadVoucherBalance() {
+    const el = document.getElementById('voucher-balance-display');
+    if (!el) return;
+    
+    // Check login via localStorage or granumAuth
+    const isLoggedIn = window.granumAuth?.isLoggedIn() || localStorage.getItem('lh_user');
+    if (!isLoggedIn) {
+      el.textContent = 'Sign in to use voucher balance';
+      return;
+    }
+    
+    try {
+      const res = await window.granumAuth.apiFetch('/fsm/voucher-balance');
+      const data = await res.json();
+      const balance = data.voucher_balance || 0;
+      el.textContent = `Available: R${balance.toFixed(2)}`;
+    } catch (err) {
+      el.textContent = 'Unable to load balance';
+    }
+  }
+
+  // ── card formatting ────────────────────────────────────────────
+  function formatCard(input) {
+    let v = input.value.replace(/\D/g,'').slice(0,16);
+    input.value = v.match(/.{1,4}/g)?.join(' ') || v;
+    const brands = { '4':'💳', '5':'💳', '3':'💳', '6':'💳' };
+    const brand = document.getElementById('card-brand');
+    brand.textContent = brands[v[0]] || '💳';
+  }
+
+  function formatExpiry(input) {
+    let v = input.value.replace(/\D/g,'');
+    if (v.length >= 2) v = v.slice(0,2) + ' / ' + v.slice(2,4);
+    input.value = v;
+  }
+
+  // ── build review step ─────────────────────────────────────────
+  function buildReviewStep() {
+    const payLabels = { card:'Debit / Credit card', voucher:'Granum voucher', 'voucher-balance':'Voucher Balance', eft:'EFT / Bank transfer', cash:'Cash on delivery', snap:'SnapScan / QR pay' };
+    document.getElementById('review-delivery-summary').innerHTML = `
+      <div style="background:var(--card);border-radius:12px;padding:1rem 1.1rem;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:.7rem">Delivering to</div>
+        <div style="font-size:14px;font-weight:600">${document.getElementById('shop-name').value}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:3px">${document.getElementById('address').value}, ${document.getElementById('area').value || ''}</div>
+        <div style="font-size:13px;color:var(--muted)">${document.getElementById('province').value}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px">📞 ${document.getElementById('phone').value}</div>
+        <div style="font-size:13px;color:var(--green);margin-top:4px;font-weight:500">📅 ${formatDate(document.getElementById('delivery-date').value)}</div>
+      </div>`;
+    document.getElementById('review-payment-summary').innerHTML = `
+      <div style="background:var(--card);border-radius:12px;padding:1rem 1.1rem">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:.7rem">Payment</div>
+        <div style="font-size:14px;font-weight:600">${payLabels[activePayment] || 'Not selected'}</div>
+        ${activeVoucher ? `<div style="font-size:13px;color:var(--green);margin-top:3px">🎟️ Voucher: R${activeVoucher.balance} applied</div>` : ''}
+        ${activePromo   ? `<div style="font-size:13px;color:var(--green);margin-top:3px">🏷️ ${activePromo.pct}% discount applied</div>` : ''}
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:8px">Total: <span style="color:var(--green);font-family:'Playfair Display',serif">R${getTotal()}</span></div>
+      </div>`;
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-ZA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  }
+
+  // ── checkout summary sidebar ───────────────────────────────────
+  function renderCheckoutSummary() {
+    document.getElementById('summary-items').innerHTML = cart.map(item => `
+      <div class="summary-item">
+        <div class="s-emoji">${getProductEmoji(item.name)}</div>
+        <div class="s-name">${item.name}</div>
+        <div class="s-qty">×${item.qty}</div>
+        <div class="s-price">R${item.price * item.qty}</div>
+      </div>`).join('');
+
+    const sub = getSubtotal();
+    const disc = getDiscount();
+    document.getElementById('s-subtotal').textContent = `R${sub}`;
+    document.getElementById('s-total').textContent    = `R${getTotal()}`;
+    const sdr = document.getElementById('s-discount-row');
+    if (disc) {
+      sdr.style.display = '';
+      document.getElementById('s-discount-label').textContent = activeVoucher ? 'Voucher' : 'Promo';
+      document.getElementById('s-discount').textContent = `−R${disc}`;
+    } else {
+      sdr.style.display = 'none';
+    }
+  }
+
+  // ── place order ───────────────────────────────────────────────
+  async function placeOrder() {
+    const placeBtn = document.querySelector('#step3 .step-next');
+    placeBtn.disabled = true;
+    placeBtn.textContent = 'Placing order…';
+
+    // check login
+    const user = window.granumAuth?.getUser();
+    if (!user) {
+      showToast('Please sign in to place an order');
+      setTimeout(() => {
+        window.location.href = 'granum-auth.html?next=granum-cart.html';
+      }, 1200);
+      placeBtn.disabled = false; placeBtn.textContent = '✅ Place order';
+      return;
+    }
+
+    // build request body
+    const delivDate = document.getElementById('delivery-date').value;
+    const body = {
+      items: cart.map(i => ({
+        product_id: i.id,   // real UUID from product page
+        qty:        i.qty,
+      })),
+      delivery_name:     document.getElementById('shop-name').value + ' — ' + document.getElementById('owner-name').value,
+      delivery_phone:    document.getElementById('phone').value,
+      delivery_address:  document.getElementById('address').value,
+      delivery_area:     document.getElementById('area').value || '',
+      delivery_province: document.getElementById('province').value,
+      delivery_date:     delivDate,
+      delivery_notes:    document.getElementById('instructions').value || '',
+      payment_method:    activePayment,
+    };
+    if (activeVoucher) body.voucher_code = document.getElementById('voucher-code').value.trim().toUpperCase();
+
+    // Handle voucher balance payment
+    if (activePayment === 'voucher-balance') {
+      const totalCents = Math.round(getTotal() * 100);
+      try {
+        const res = await window.granumAuth.apiFetch('/fsm/voucher-balance/use', {
+          method: 'POST',
+          body: JSON.stringify({ amount_cents: totalCents }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showToast('❌ ' + (data.error || 'Insufficient voucher balance'));
+          placeBtn.disabled = false; placeBtn.textContent = '✅ Place order';
+          return;
+        }
+        body.voucher_balance_used_cents = totalCents;
+      } catch (err) {
+        showToast('Could not use voucher balance. Please try again.');
+        placeBtn.disabled = false; placeBtn.textContent = '✅ Place order';
+        return;
+      }
+    }
+
+    // if cart items don't have real UUIDs (demo mode), fall back to mock flow
+    const hasRealIds = cart.every(i => i.id && /^[0-9a-f-]{36}$/.test(i.id));
+    if (!hasRealIds) {
+      console.log('[Cart] Demo mode — no real product IDs, using mock order flow');
+      mockPlaceOrder(delivDate);
+      placeBtn.disabled = false; placeBtn.textContent = '✅ Place order';
+      return;
+    }
+
+    try {
+      const res = await window.granumAuth.apiFetch('/api/orders', {
+        method:  'POST',
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast('❌ ' + (data.error || 'Order failed. Please try again.'));
+        placeBtn.disabled = false; placeBtn.textContent = '✅ Place order';
+        return;
+      }
+
+      // success
+      showConfirmation(data.order, data.notifications);
+
+    } catch (err) {
+      console.error('[Order]', err);
+      showToast('Could not connect to the server. Please try again.');
+      placeBtn.disabled = false; placeBtn.textContent = '✅ Place order';
+    }
+  }
+
+  // mock flow for demo (when cart has no real product UUIDs)
+  function mockPlaceOrder(delivDate) {
+    const orderId = 'LH-' + Date.now().toString(36).toUpperCase().slice(-6);
+    showConfirmation({
+      order_number:  orderId,
+      delivery_date: delivDate,
+      total_cents:   getTotal() * 100,
+      payment_method: activePayment || 'cash_on_delivery',
+    }, { sms_sent: true, email_sent: false });
+  }
+
+  function showConfirmation(order, notifications = {}) {
+    const delivDate = order.delivery_date;
+    document.getElementById('order-num').textContent    = order.order_number;
+    document.getElementById('confirm-date').textContent = formatDate(delivDate);
+    
+    // Total and payment method
+    const total = order.total_cents ? (order.total_cents / 100) : getTotal();
+    document.getElementById('confirm-total').textContent = `Total: R${total.toFixed(2)}`;
+    
+    const paymentLabels = { 
+      cash_on_delivery: 'Pay on delivery', 
+      card: 'Card payment', 
+      eft: ' EFT transfer',
+      snapscan: 'SnapScan',
+      voucher: 'Voucher'
+    };
+    document.getElementById('confirm-payment').textContent = `Payment: ${paymentLabels[order.payment_method] || order.payment_method}`;
+
+    // notification status lines
+    const notifEl = document.getElementById('confirm-notif');
+    if (notifEl) {
+      const lines = [];
+      if (notifications.sms_sent)   lines.push('📱 SMS confirmation sent');
+      if (notifications.email_sent) lines.push('📧 Email confirmation sent');
+      notifEl.textContent = lines.join('  ·  ');
+      notifEl.style.display = lines.length ? '' : 'none';
+    }
+
+    document.getElementById('confirm-backdrop').classList.add('open');
+  }
+
+  function finishOrder() {
+    cart = []; saveCartLS(); updateCartBadge();
+    activePromo = null; activeVoucher = null; activePayment = null;
+    document.getElementById('confirm-backdrop').classList.remove('open');
+    document.getElementById('checkout-page').classList.remove('show');
+    document.getElementById('landing-view').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('🎉 Order confirmed! See you next time.');
+  }
+
+  // ── toast ─────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt = setTimeout(()=>t.classList.remove('show'), 2800);
+  }
+
+  // ── keyboard ──────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeCart();
+  });
+
+  // ── init ──────────────────────────────────────────────────────
+  loadCart();
+  updateCartBadge();
+
+  // show landing vs checkout based on URL param
+  if (window.location.search.includes('checkout=1') && cart.length) goToCheckout();
+</script>
+</body>
+</html>

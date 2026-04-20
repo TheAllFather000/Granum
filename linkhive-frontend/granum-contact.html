@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — Contact Us</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:       #4A6B3C;
+      --green-dark:  #3A552E;
+      --green-light: #EAF3DE;
+      --brown:       #8B6946;
+      --brown-light: #F5EDE0;
+      --cream:       #FDFAF6;
+      --card:        #F2EEE7;
+      --text:        #2E2C28;
+      --muted:       #7A776F;
+      --white:       #FFFFFF;
+      --border:      rgba(60,55,45,0.11);
+      --border-mid:  rgba(60,55,45,0.2);
+      --red:         #C0392B;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
+
+    /* ── nav ─────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(253,250,246,0.92);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 5vw;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: var(--green); text-decoration: none; }
+    .nav-logo span { color: var(--brown); }
+    .nav-links { display: flex; gap: 1.8rem; list-style: none; }
+    .nav-links a { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--green); }
+    .cart-btn {
+      background: var(--green); color: white; border: none; border-radius: 9px;
+      padding: 8px 16px; font-size: 14px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      font-family: 'DM Sans', sans-serif; transition: background 0.2s;
+    }
+    .cart-btn:hover { background: var(--green-dark); }
+    .cart-count {
+      background: var(--brown); color: white; border-radius: 50%;
+      width: 19px; height: 19px; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── reveal ──────────────────────────────────────────────── */
+    .reveal       { opacity: 0; transform: translateY(22px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal-left  { opacity: 0; transform: translateX(-28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal-right { opacity: 0; transform: translateX(28px);  transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.up, .reveal-left.up, .reveal-right.up { opacity: 1; transform: none; }
+
+    /* ── page header ─────────────────────────────────────────── */
+    .page-header {
+      padding: 4rem 5vw 3.5rem;
+      border-bottom: 1px solid var(--border);
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: end;
+    }
+    .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+    .breadcrumb a { color: var(--green); text-decoration: none; transition: opacity 0.2s; }
+    .breadcrumb a:hover { opacity: 0.75; }
+    .breadcrumb span { opacity: 0.35; }
+    .eyebrow { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--brown); margin-bottom: 1rem; }
+    .page-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 900; line-height: 1.1; letter-spacing: -1px;
+    }
+    .page-header h1 em { color: var(--green); font-style: normal; }
+    .header-right p { font-size: 15px; color: var(--muted); line-height: 1.8; }
+    .response-note {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green-light); border-radius: 10px;
+      padding: 10px 14px; margin-top: 1.2rem;
+      font-size: 13px; color: var(--green-dark); font-weight: 500;
+    }
+    .response-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── main layout ─────────────────────────────────────────── */
+    .main { padding: 4rem 5vw 5rem; display: grid; grid-template-columns: 1fr 400px; gap: 5rem; align-items: start; }
+
+    /* ── contact form ────────────────────────────────────────── */
+    .form-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2.2rem 2rem;
+    }
+    .form-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem; font-weight: 700; margin-bottom: 0.4rem;
+    }
+    .form-card .sub { font-size: 13px; color: var(--muted); margin-bottom: 2rem; }
+
+    /* tabs */
+    .form-tabs { display: flex; gap: 0; margin-bottom: 1.8rem; background: var(--card); border-radius: 10px; padding: 4px; }
+    .tab-btn {
+      flex: 1; background: transparent; border: none;
+      border-radius: 8px; padding: 8px 10px;
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: all 0.18s; white-space: nowrap;
+    }
+    .tab-btn.active { background: var(--white); color: var(--green); box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+
+    /* fields */
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .field label { font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: 0.2px; }
+    .field label .req { color: var(--green); margin-left: 2px; }
+    .field input,
+    .field select,
+    .field textarea {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 13px;
+      font-size: 14px; color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      outline: none; transition: border-color 0.2s, background 0.2s;
+      width: 100%;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus { border-color: var(--green); background: var(--white); }
+    .field input.error,
+    .field textarea.error { border-color: var(--red); }
+    .field .err-msg { font-size: 11px; color: var(--red); display: none; }
+    .field.has-error .err-msg { display: block; }
+    .field textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
+    .field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A776F' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px; }
+
+    .char-count { font-size: 11px; color: var(--muted); text-align: right; margin-top: 3px; }
+
+    .submit-btn {
+      width: 100%; background: var(--green); color: white;
+      border: none; border-radius: 12px;
+      padding: 13px; font-size: 15px; font-weight: 600;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: background 0.2s, transform 0.15s;
+      margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .submit-btn:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .submit-btn:active { transform: scale(0.99); }
+    .submit-btn.loading { opacity: 0.7; pointer-events: none; }
+
+    .privacy-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 12px; line-height: 1.5; }
+
+    /* success state */
+    .success-state {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center;
+      padding: 2rem 1rem; gap: 1rem;
+    }
+    .success-state.show { display: flex; }
+    .success-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--green-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      animation: popIn 0.4s ease;
+    }
+    @keyframes popIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+    .success-state h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
+    .success-state p { font-size: 14px; color: var(--muted); max-width: 280px; line-height: 1.6; }
+    .reset-btn {
+      background: transparent; border: 1.5px solid var(--border-mid);
+      border-radius: 9px; padding: 8px 18px;
+      font-size: 13px; color: var(--muted); cursor: pointer;
+      font-family: 'DM Sans', sans-serif; margin-top: 4px; transition: all 0.2s;
+    }
+    .reset-btn:hover { border-color: var(--green); color: var(--green); }
+
+    /* ── sidebar ─────────────────────────────────────────────── */
+    .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+
+    .info-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.4rem 1.3rem;
+    }
+    .info-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+
+    .contact-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+    }
+    .contact-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .ci-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .ci-icon.g { background: var(--green-light); }
+    .ci-icon.b { background: var(--brown-light); }
+    .ci-icon.s { background: #EEF0FA; }
+    .ci-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ci-value { font-size: 13px; color: var(--text); font-weight: 500; line-height: 1.4; }
+    .ci-value a { color: var(--green); text-decoration: none; }
+    .ci-value a:hover { text-decoration: underline; }
+
+    /* quick links card */
+    .quick-links { display: flex; flex-direction: column; gap: 8px; }
+    .quick-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      background: var(--card); text-decoration: none;
+      color: var(--text); font-size: 13px; font-weight: 500;
+      transition: background 0.18s, transform 0.18s;
+    }
+    .quick-link:hover { background: var(--green-light); transform: translateX(3px); }
+    .quick-link .ql-icon { font-size: 16px; width: 24px; text-align: center; }
+    .quick-link .ql-arrow { margin-left: auto; color: var(--muted); font-size: 14px; transition: transform 0.18s; }
+    .quick-link:hover .ql-arrow { transform: translateX(3px); color: var(--green); }
+
+    /* faq card */
+    .faq-list { display: flex; flex-direction: column; }
+    .faq-item { border-bottom: 1px solid var(--border); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      width: 100%; background: none; border: none;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 0; text-align: left;
+      font-size: 13px; font-weight: 600; color: var(--text);
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      gap: 10px;
+    }
+    .faq-chevron { flex-shrink: 0; transition: transform 0.22s; color: var(--muted); font-size: 12px; }
+    .faq-item.open .faq-chevron { transform: rotate(180deg); }
+    .faq-a {
+      font-size: 13px; color: var(--muted); line-height: 1.65;
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.28s ease, padding 0.2s;
+      padding-bottom: 0;
+    }
+    .faq-item.open .faq-a { max-height: 200px; padding-bottom: 0.85rem; }
+
+    /* ── footer ──────────────────────────────────────────────── */
+    footer { background:var(--text); color:rgba(255,255,255,.7); padding:3.5rem 5vw 1.5rem; }
+    .footer-main { display:grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr; gap:2.5rem; max-width:1200px; margin:0 auto 2rem; }
+    .footer-brand { display:flex; flex-direction:column; gap:1rem; }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:white; text-decoration:none; }
+    .footer-logo span { color:var(--brown); }
+    .footer-tagline { font-size:14px; line-height:1.5; color:rgba(255,255,255,.5); }
+    .footer-social { display:flex; gap:12px; }
+    .footer-social a { font-size:22px; text-decoration:none; transition:transform .2s; }
+    .footer-social a:hover { transform:scale(1.15); }
+    .footer-col { display:flex; flex-direction:column; gap:10px; }
+    .footer-col h4 { color:white; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .footer-col a { color:rgba(255,255,255,.55); font-size:13px; text-decoration:none; transition:color .2s; }
+    .footer-col a:hover { color:white; }
+    .footer-newsletter p { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:10px; }
+    .newsletter-form { display:flex; gap:8px; }
+    .newsletter-form input { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:10px 12px; font-size:13px; color:white; }
+    .newsletter-form input::placeholder { color:rgba(255,255,255,.35); }
+    .newsletter-form button { background:var(--green); color:white; border:none; border-radius:8px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+    .newsletter-form button:hover { background:var(--green-dark); }
+    .footer-bottom { border-top:1px solid rgba(255,255,255,.1); padding-top:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; max-width:1200px; margin:0 auto; }
+    .footer-bottom p { font-size:12px; color:rgba(255,255,255,.4); }
+    .footer-legal { display:flex; gap:1.5rem; }
+    .footer-legal a { font-size:12px; color:rgba(255,255,255,.4); text-decoration:none; transition:color .2s; }
+    .footer-legal a:hover { color:white; }
+    @media(max-width:900px) { .footer-main { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column:span 2; } }
+    @media(max-width:580px) { .footer-main { grid-template-columns: 1fr; } .footer-brand { grid-column:span 1; } }
+
+    /* ── toast ───────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--text); color: white;
+      padding: 11px 20px; border-radius: 10px;
+      font-size: 13px; font-weight: 500; z-index: 1000; opacity: 0;
+      transition: all 0.28s; pointer-events: none; white-space: nowrap; max-width: 90vw;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── responsive ──────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .page-header { grid-template-columns: 1fr; gap: 1.5rem; padding: 3rem 5vw; }
+      .main { grid-template-columns: 1fr; gap: 2rem; }
+      .sidebar { order: -1; }
+      footer { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .field-row { grid-template-columns: 1fr; }
+      .form-card { padding: 1.5rem 1.2rem; }
+    }
+  </style>
+
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+</head>
+<body>
+  <nav></nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="reveal-left">
+    <div class="breadcrumb">
+      <a href="granum-home.html">Home</a> <span>›</span> <span>Contact</span>
+    </div>
+    <span class="eyebrow">Talk to us</span>
+    <h1>We actually<br><em>read every message.</em></h1>
+  </div>
+  <div class="header-right reveal-right">
+    <p>Whether you're a spaza owner with a question, a farmer who wants to list, a journalist writing a story, or just someone who thinks what we're doing is interesting — we want to hear from you.</p>
+    <div class="response-note">
+      <span class="response-dot"></span>
+      We typically respond within 24 hours on weekdays
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- CONTACT FORM -->
+  <div class="form-card reveal">
+    <!-- form view -->
+    <div id="form-view">
+      <h2>Send us a message</h2>
+      <p class="sub">Choose the type of enquiry below and we'll route it to the right person.</p>
+
+      <!-- tabs -->
+      <div class="form-tabs">
+        <button class="tab-btn active" onclick="switchTab(this, 'general')">General</button>
+        <button class="tab-btn" onclick="switchTab(this, 'spaza')">I'm a spaza owner</button>
+        <button class="tab-btn" onclick="switchTab(this, 'farmer')">I'm a farmer</button>
+        <button class="tab-btn" onclick="switchTab(this, 'press')">Press</button>
+      </div>
+
+      <form id="contact-form" novalidate onsubmit="handleSubmit(event)">
+
+        <!-- shared fields -->
+        <div class="field-row">
+          <div class="field" id="field-name">
+            <label>Your name <span class="req">*</span></label>
+            <input type="text" id="inp-name" placeholder="e.g. Thabo Nkosi" />
+            <span class="err-msg">Please enter your name</span>
+          </div>
+          <div class="field" id="field-phone">
+            <label>Phone number <span class="req">*</span></label>
+            <input type="tel" id="inp-phone" placeholder="e.g. 071 234 5678" />
+            <span class="err-msg">Please enter a valid number</span>
+          </div>
+        </div>
+
+        <div class="field" id="field-email">
+          <label>Email address <span class="req">*</span></label>
+          <input type="email" id="inp-email" placeholder="you@example.com" />
+          <span class="err-msg">Please enter a valid email</span>
+        </div>
+
+        <!-- context fields — shown per tab -->
+        <div id="ctx-spaza" style="display:none">
+          <div class="field">
+            <label>Spaza shop name</label>
+            <input type="text" id="inp-spaza-name" placeholder="e.g. Thabo's Corner Shop" />
+          </div>
+          <div class="field">
+            <label>Where is your shop?</label>
+            <input type="text" id="inp-spaza-loc" placeholder="e.g. Soweto, Gauteng" />
+          </div>
+        </div>
+
+        <div id="ctx-farmer" style="display:none">
+          <div class="field">
+            <label>Farm or business name</label>
+            <input type="text" id="inp-farm-name" placeholder="e.g. Nomsa's Farm" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Province</label>
+              <select id="inp-province">
+                <option value="">Select province</option>
+                <option>Western Cape</option>
+                <option>Gauteng</option>
+                <option>KwaZulu-Natal</option>
+                <option>Limpopo</option>
+                <option>Free State</option>
+                <option>North West</option>
+                <option>Mpumalanga</option>
+                <option>Eastern Cape</option>
+                <option>Northern Cape</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>What do you grow / produce?</label>
+              <input type="text" id="inp-produce" placeholder="e.g. tomatoes, eggs" />
+            </div>
+          </div>
+        </div>
+
+        <div id="ctx-press" style="display:none">
+          <div class="field">
+            <label>Publication or outlet</label>
+            <input type="text" id="inp-outlet" placeholder="e.g. Daily Maverick" />
+          </div>
+          <div class="field">
+            <label>Deadline (if applicable)</label>
+            <input type="date" id="inp-deadline" />
+          </div>
+        </div>
+
+        <!-- subject (general only) -->
+        <div id="ctx-general">
+          <div class="field">
+            <label>Subject</label>
+            <select id="inp-subject">
+              <option value="">What's this about?</option>
+              <option>Question about an order</option>
+              <option>Delivery issue</option>
+              <option>Partnership enquiry</option>
+              <option>Feedback</option>
+              <option>Something else</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- message — always shown -->
+        <div class="field" id="field-message">
+          <label>Your message <span class="req">*</span></label>
+          <textarea id="inp-message" placeholder="Tell us what's on your mind…" maxlength="600" oninput="updateCharCount()"></textarea>
+          <div class="char-count"><span id="char-num">0</span> / 600</div>
+          <span class="err-msg">Please write a message</span>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">
+          <span id="btn-text">Send message →</span>
+        </button>
+        <p class="privacy-note">Your details are only used to respond to your enquiry. We don't spam — ever.</p>
+      </form>
+    </div>
+
+    <!-- success view -->
+    <div class="success-state" id="success-view">
+      <div class="success-icon">✅</div>
+      <h3>Message sent!</h3>
+      <p>Thanks for reaching out. We'll get back to you within 24 hours on weekdays.</p>
+      <button class="reset-btn" onclick="resetForm()">Send another message</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- contact details -->
+    <div class="info-card reveal">
+      <h3>Other ways to reach us</h3>
+      <div class="contact-item">
+        <div class="ci-icon g">📧</div>
+        <div>
+          <div class="ci-label">General enquiries</div>
+          <div class="ci-value"><a href="/cdn-cgi/l/email-protection#bdd5d8d1d1d2fdd1d4d3d6d5d4cbd893ded293c7dc"><span class="__cf_email__" data-cfemail="80e8e5ececefc0ece9eeebe8e9f6e5aee3efaefae1">[email&#160;protected]</span></a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="ci-icon b">🌱</div>
+        <div>
+          <div class="ci-label">Farmers & suppliers</div>
+          <div class="ci-value"><a href="/cdn-cgi/l/email-protection#ed8b8c9f80889f9ead8184838685849b88c38e82c3978c"><span class="__cf_email__" data-cfemail="99fff8ebf4fcebead9f5f0f7f2f1f0effcb7faf6b7e3f8">[email&#160;protected]</span></a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="ci-icon g">📰</div>
+        <div>
+          <div class="ci-label">Press & media</div>
+          <div class="ci-value"><a href="/cdn-cgi/l/email-protection#a5d5d7c0d6d6e5c9cccbcecdccd3c08bc6ca8bdfc4"><span class="__cf_email__" data-cfemail="304042554343705c595e5b585946551e535f1e4a51">[email&#160;protected]</span></a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="ci-icon s">📍</div>
+        <div>
+          <div class="ci-label">Based in</div>
+          <div class="ci-value">Cape Town, South Africa<br><span style="font-size:11px;color:var(--muted)">Operations across all 9 provinces</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- quick links -->
+    <div class="info-card reveal">
+      <h3>Quick links</h3>
+      <div class="quick-links">
+        <a href="granum-home.html" class="quick-link">
+          <span class="ql-icon">🏠</span> Home
+          <span class="ql-arrow">→</span>
+        </a>
+        <a href="granum-shop.html" class="quick-link">
+          <span class="ql-icon">🛒</span> Browse the marketplace
+          <span class="ql-arrow">→</span>
+        </a>
+        <a href="granum-about.html" class="quick-link">
+          <span class="ql-icon">🌱</span> About Granum
+          <span class="ql-arrow">→</span>
+        </a>
+        <a href="#" class="quick-link" onclick="window.location.href='granum-howitworks.html'">
+          <span class="ql-icon">📖</span> How it works
+          <span class="ql-arrow">→</span>
+        </a>
+        <a href="#" class="quick-link" onclick="window.location.href='granum-vouchers.html'">
+          <span class="ql-icon">🎟️</span> Buy a voucher
+          <span class="ql-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- mini FAQ -->
+    <div class="info-card reveal">
+      <h3>Common questions</h3>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            How quickly do you deliver? <span class="faq-chevron">▼</span>
+          </button>
+          <div class="faq-a">Most orders are delivered within 24 hours in covered areas. Remote areas may take up to 48 hours. You'll get an SMS confirmation when your order is collected from the supplier.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            Is there a minimum order size? <span class="faq-chevron">▼</span>
+          </button>
+          <div class="faq-a">No. That's one of our core principles — order 1kg or 100kg, the platform treats you the same. Bulk discounts are available on select products but are never mandatory.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            How do I list my farm on Granum? <span class="faq-chevron">▼</span>
+          </button>
+          <div class="faq-a">Use the form on this page and select "I'm a farmer", or email us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="98fef9eaf5fdeaebd8f4f1f6f3f0f1eefdb6fbf7b6e2f9">[email&#160;protected]</a>. We'll walk you through verification and listing your first products — usually within 3 business days.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            Is Granum free to use? <span class="faq-chevron">▼</span>
+          </button>
+          <div class="faq-a">For spaza shops: completely free to browse and order. For suppliers: we take a 5% commission per sale. There are no listing fees, no subscriptions, no surprises.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-main">
+    <div class="footer-brand">
+      <a href="granum-home.html" class="footer-logo">Granum</a>
+      <p class="footer-tagline">Connecting spaza shops to farmers & manufacturers.</p>
+      <div class="footer-social">
+        <a href="#" title="Facebook">📘</a>
+        <a href="#" title="Instagram">📸</a>
+        <a href="#" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Shop</h4>
+      <a href="granum-shop.html">Browse Products</a>
+      <a href="granum-cart.html">My Cart</a>
+      <a href="granum-vouchers.html">Gift Vouchers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="granum-about.html">About Us</a>
+      <a href="granum-howitworks.html">How It Works</a>
+      <a href="granum-leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="granum-contact.html">Contact Us</a>
+      <a href="#">FAQs</a>
+      <a href="#">Delivery Info</a>
+    </div>
+    <div class="footer-col footer-newsletter">
+      <h4>Stay Updated</h4>
+      <p>Get the latest deals and updates.</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Your email" />
+        <button>Subscribe</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Granum. All rights reserved.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // active tab state
+  let activeTab = 'general';
+
+  function switchTab(btn, tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = tab;
+    // show/hide context fields
+    ['general','spaza','farmer','press'].forEach(t => {
+      const el = document.getElementById('ctx-' + t);
+      if (el) el.style.display = t === tab ? 'block' : 'none';
+    });
+  }
+
+  // character counter for textarea
+  function updateCharCount() {
+    const val = document.getElementById('inp-message').value.length;
+    document.getElementById('char-num').textContent = val;
+  }
+
+  // lightweight validation
+  function validate() {
+    let ok = true;
+    const checks = [
+      { id: 'inp-name',    fieldId: 'field-name',    test: v => v.trim().length > 1 },
+      { id: 'inp-phone',   fieldId: 'field-phone',   test: v => /^[\d\s+()-]{7,}$/.test(v.trim()) },
+      { id: 'inp-email',   fieldId: 'field-email',   test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) },
+      { id: 'inp-message', fieldId: 'field-message', test: v => v.trim().length > 5 },
+    ];
+    checks.forEach(({ id, fieldId, test }) => {
+      const input = document.getElementById(id);
+      const field = document.getElementById(fieldId);
+      const passes = test(input.value);
+      input.classList.toggle('error', !passes);
+      field.classList.toggle('has-error', !passes);
+      if (!passes) ok = false;
+    });
+    return ok;
+  }
+
+  // remove error state on input
+  document.addEventListener('input', e => {
+    if (e.target.matches('input, textarea')) {
+      e.target.classList.remove('error');
+      e.target.closest('.field')?.classList.remove('has-error');
+    }
+  });
+
+  // form submit — sends to API and shows success state
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const btn = document.getElementById('submit-btn');
+    const txt = document.getElementById('btn-text');
+    btn.classList.add('loading');
+    txt.textContent = 'Sending…';
+
+    const formData = {
+      name: document.getElementById('inp-name').value,
+      phone: document.getElementById('inp-phone').value,
+      email: document.getElementById('inp-email').value,
+      message: document.getElementById('inp-message').value,
+      type: activeTab
+    };
+
+    try {
+      const res = await fetch('http://localhost:3000/fsm/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      
+      if (!res.ok) throw new Error('Failed to send');
+      
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('success-view').classList.add('show');
+    } catch (err) {
+      showToast('Failed to send. Please try again.');
+      btn.classList.remove('loading');
+      txt.textContent = 'Send message →';
+    }
+  }
+
+  function resetForm() {
+    document.getElementById('contact-form').reset();
+    document.getElementById('char-num').textContent = '0';
+    document.getElementById('submit-btn').classList.remove('loading');
+    document.getElementById('btn-text').textContent = 'Send message →';
+    document.getElementById('success-view').classList.remove('show');
+    document.getElementById('form-view').style.display = 'block';
+    switchTab(document.querySelector('.tab-btn'), 'general');
+  }
+
+  // accordion FAQ
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  // scroll reveal
+  const reveal = new IntersectionObserver(e => {
+    e.forEach(el => { if (el.isIntersecting) el.target.classList.add('up'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el => reveal.observe(el));
+</script>

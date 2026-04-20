@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — Orders</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --green:#4A6B3C; --green-dark:#3A552E; --green-light:#EAF3DE;
+      --brown:#8B6946; --brown-light:#F5EDE0;
+      --cream:#FDFAF6; --card:#F2EEE7;
+      --text:#2E2C28; --muted:#7A776F;
+      --white:#FFFFFF;
+      --border:rgba(60,55,45,0.11); --border-mid:rgba(60,55,45,0.2);
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); padding:2rem 5vw; }
+    h1 { font-size:1.8rem; margin-bottom:1.5rem; color:var(--green); }
+    
+    .tabs { display:flex; gap:.5rem; margin-bottom:1.5rem; border-bottom:2px solid var(--border); flex-wrap:wrap; }
+    .tab {
+      padding:.75rem 1.5rem; cursor:pointer; font-weight:600; color:var(--muted);
+      border-bottom:3px solid transparent; margin-bottom:-2px; transition:.2s;
+    }
+    .tab:hover { color:var(--text); }
+    .tab.active { color:var(--green); border-bottom-color:var(--green); }
+    
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    
+    .order-card {
+      background:var(--white); border:1px solid var(--border); border-radius:12px;
+      padding:1rem 1.25rem; margin-bottom:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.04);
+    }
+    .order-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.75rem; }
+    .order-number { font-weight:700; font-size:1rem; }
+    .order-status {
+      padding:.25rem .6rem; border-radius:6px; font-size:.75rem; font-weight:700; text-transform:uppercase;
+    }
+    .status-pending { background:#FEF3C7; color:#B45309; }
+    .status-confirmed { background:#DBEAFE; color:#1D4ED8; }
+    .status-out_for_delivery { background:#E0E7FF; color:#4338CA; }
+    .status-delivered { background:#D1FAE5; color:#059669; }
+    .status-cancelled { background:#FEE2E2; color:#DC2626; }
+    
+    .order-items { margin:.5rem 0; padding:.5rem 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+    .order-item { display:flex; justify-content:space-between; font-size:.9rem; margin:.25rem 0; }
+    .order-item-name { color:var(--text); }
+    .order-item-qty { color:var(--muted); margin-right:.5rem; }
+    .order-item-price { font-weight:600; }
+    
+    .order-footer { display:flex; justify-content:space-between; align-items:center; margin-top:.5rem; flex-wrap:wrap; gap:.5rem; }
+    .order-total { font-weight:700; font-size:1.1rem; }
+    .order-date { font-size:.85rem; color:var(--muted); }
+    .cancel-btn {
+      background:#FEE2E2; color:#DC2626; border:none; padding:.5rem 1rem;
+      border-radius:6px; font-size:.85rem; font-weight:600; cursor:pointer;
+    }
+    .cancel-btn:hover { background:#FECACA; }
+    
+    .empty { text-align:center; padding:3rem 1rem; color:var(--muted); }
+    .empty-icon { font-size:3rem; margin-bottom:1rem; }
+    
+    .login-prompt { 
+      background:var(--green-light); border:1px solid var(--green); border-radius:12px; 
+      padding:2rem; text-align:center; 
+    }
+    .login-prompt h2 { font-size:1.2rem; margin-bottom:.5rem; }
+    .login-prompt p { margin-bottom:1rem; }
+    .login-prompt button {
+      background:var(--green); color:white; border:none; padding:.75rem 1.5rem;
+      border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer;
+    }
+    
+    @media (max-width:600px) {
+      .order-header { flex-direction:column; gap:.5rem; }
+      .order-footer { flex-direction:column; gap:.5rem; align-items:flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <h1>📦 Orders</h1>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="my-orders">Current Orders</div>
+    <div class="tab" data-tab="history">Order History</div>
+  </div>
+  
+  <!-- TAB 1: MY ORDERS -->
+  <div id="my-orders" class="tab-content active">
+    <div id="my-orders-content">
+      <p class="empty">Loading...</p>
+    </div>
+  </div>
+  
+  <!-- TAB 2: ORDER HISTORY -->
+  <div id="history" class="tab-content">
+    <div id="history-content">
+      <p class="empty">Loading...</p>
+    </div>
+  </div>
+  
+<script>
+    const API = 'http://localhost:3000';
+    
+    function checkAuthAndLoad() {
+      // Wait for granumAuth to be available
+      if (!window.granumAuth) {
+        setTimeout(checkAuthAndLoad, 100);
+        return;
+      }
+      loadMyOrders();
+    }
+    
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+    
+    function getStatusClass(status) {
+      const map = {
+        'pending': 'status-pending',
+        'confirmed': 'status-confirmed',
+        'out_for_delivery': 'status-out_for_delivery',
+        'delivered': 'status-delivered',
+        'cancelled': 'status-cancelled'
+      };
+      return map[status] || 'status-pending';
+    }
+    
+    function formatStatus(status) {
+      return status.replace(/_/g, ' ');
+    }
+    
+    function renderOrders(orders, emptyMsg, containerId, showCurrent) {
+      const container = document.getElementById(containerId);
+      
+      if (!window.granumAuth.isLoggedIn()) {
+        container.innerHTML = `
+          <div class="login-prompt">
+            <h2>Sign in to view orders</h2>
+            <p>You need to be signed in to view your orders.</p>
+            <button onclick="window.location.href='granum-auth.html?next=orders.html'">Sign in</button>
+          </div>
+        `;
+        return;
+      }
+      
+      if (!orders || orders.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">📦</div>
+            <p>${emptyMsg}</p>
+          </div>
+        `;
+        return;
+      }
+      
+      const filtered = orders.filter(o => {
+        if (showCurrent) {
+          return o.status === 'pending' || o.status === 'confirmed';
+        } else {
+          return o.status === 'delivered' || o.status === 'cancelled' || o.status === 'out_for_delivery';
+        }
+      });
+      
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">📦</div>
+            <p>${emptyMsg}</p>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = filtered.map(o => `
+        <div class="order-card">
+          <div class="order-header">
+            <div class="order-number">Order #${o.order_number}</div>
+            <div class="order-status ${getStatusClass(o.status)}">${formatStatus(o.status)}</div>
+          </div>
+          <div class="order-items">
+            ${(o.items || []).map(item => `
+              <div class="order-item">
+                <div class="order-item-name">${item.product_name}</div>
+                <div class="order-item-price">R${(item.subtotal_cents || 0) / 100}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="order-footer">
+            <div class="order-total">Total: R${(o.total_cents || 0) / 100}</div>
+            <div class="order-date">${new Date(o.placed_at).toLocaleDateString('en-ZA')}</div>
+          </div>
+          ${o.status === 'pending' ? `<button class="cancel-btn" onclick="cancelOrder('${o.id}')">Cancel Order</button>` : ''}
+        </div>
+      `).join('');
+    }
+    
+    async function cancelOrder(orderId) {
+      if (!confirm('Are you sure you want to cancel this order?')) return;
+      try {
+        const res = await window.granumAuth.apiFetch(`/fsm/orders/${orderId}/cancel`, {
+          method: 'PATCH'
+        });
+        if (res.ok) {
+          loadMyOrders();
+        } else {
+          alert('Could not cancel order');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Could not cancel order');
+      }
+    }
+    
+    let allOrders = [];
+    
+    async function loadMyOrders() {
+      if (!window.granumAuth || !window.granumAuth.isLoggedIn()) {
+        renderOrders([], 'No orders yet', 'my-orders-content', true);
+        return;
+      }
+      
+      try {
+        const res = await window.granumAuth.apiFetch('/fsm/orders');
+        const data = await res.json();
+        allOrders = data.orders || [];
+        renderOrders(allOrders, 'No current orders', 'my-orders-content', true);
+      } catch (err) {
+        console.error(err);
+        renderOrders([], 'Could not load orders', 'my-orders-content', true);
+      }
+    }
+    
+    async function loadHistory() {
+      if (!window.granumAuth || !window.granumAuth.isLoggedIn()) {
+        renderOrders([], 'No order history', 'history-content', false);
+        return;
+      }
+      
+      try {
+        if (allOrders.length === 0) {
+          const res = await window.granumAuth.apiFetch('/fsm/orders');
+          const data = await res.json();
+          allOrders = data.orders || [];
+        }
+        renderOrders(allOrders, 'No order history', 'history-content', false);
+      } catch (err) {
+        renderOrders([], 'Could not load history', 'history-content', false);
+      }
+    }
+    
+    async function loadCustomerOrders() {
+      if (!window.granumAuth || !window.granumAuth.isLoggedIn()) {
+        renderOrders([], 'No customer orders', 'customers-content', false);
+        return;
+      }
+      
+      try {
+        const res = await window.granumAuth.apiFetch('/fsm/orders/selling');
+        const data = await res.json();
+        renderOrders(data.orders || [], 'No customer orders yet', 'customers-content', false);
+      } catch (err) {
+        renderOrders([], 'Could not load customer orders', 'customers-content', false);
+      }
+    }
+    
+    // Load orders on tab switch
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (tab.dataset.tab === 'my-orders') loadMyOrders();
+        else if (tab.dataset.tab === 'history') loadHistory();
+        else if (tab.dataset.tab === 'customers') loadCustomerOrders();
+      });
+    });
+    
+    // Initial load - wait for auth
+    checkAuthAndLoad();
+  </script>
+</body>
+</html>

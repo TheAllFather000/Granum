@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — Shop</title>
+  <script src="granum-auth.js" defer></script>
+  <script>const API = 'http://localhost:3000';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:       #4A6B3C;
+      --green-dark:  #3A552E;
+      --green-light: #EAF3DE;
+      --brown:       #8B6946;
+      --brown-light: #F5EDE0;
+      --cream:       #FDFAF6;
+      --card:        #F2EEE7;
+      --text:        #2E2C28;
+      --muted:       #7A776F;
+      --white:       #FFFFFF;
+      --border:      rgba(60,55,45,0.11);
+      --border-mid:  rgba(60,55,45,0.2);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
+
+    /* ── nav ─────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(253,250,246,0.92);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 5vw;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: var(--green); }
+    .nav-logo span { color: var(--brown); }
+    .nav-links { display: flex; gap: 1.8rem; list-style: none; }
+    .nav-links a { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--green); }
+    .cart-btn {
+      background: var(--green); color: white; border: none; border-radius: 9px;
+      padding: 8px 16px; font-size: 14px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      font-family: 'DM Sans', sans-serif; transition: background 0.2s;
+    }
+    .cart-btn:hover { background: var(--green-dark); }
+    .cart-count {
+      background: var(--brown); color: white; border-radius: 50%;
+      width: 19px; height: 19px; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── page header ─────────────────────────────────────────── */
+    .page-header { padding: 2.5rem 5vw 1.8rem; border-bottom: 1px solid var(--border); }
+    .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 6px; }
+    .breadcrumb a { color: var(--green); text-decoration: none; }
+    .breadcrumb span { opacity: 0.4; }
+    .page-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; margin-bottom: 0.4rem;
+    }
+    .page-header h1 em { color: var(--green); font-style: normal; }
+    .page-header p { font-size: 14px; color: var(--muted); }
+
+    /* ── filter bar — two tiers ──────────────────────────────── */
+    .filter-bar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 60px; z-index: 100;
+    }
+
+    /* tier 1: province row */
+    .filter-tier-1 {
+      padding: 0.8rem 5vw;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap;
+    }
+    .filter-pills { display: flex; gap: 7px; flex-wrap: wrap; flex: 1; }
+
+    /* tier 2: area row — slides open */
+    .filter-tier-2 {
+      padding: 0 5vw;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      overflow: hidden;
+      max-height: 0; opacity: 0;
+      transition: max-height 0.3s ease, opacity 0.25s ease, padding-bottom 0.2s ease;
+    }
+    .filter-tier-2.open {
+      max-height: 120px; opacity: 1;
+      padding-bottom: 0.85rem;
+    }
+    .tier-divider { width: 100%; height: 1px; background: var(--border); margin-bottom: 0.55rem; }
+
+    /* province pills */
+    .pill {
+      background: transparent; border: 1.5px solid var(--border-mid);
+      border-radius: 20px; padding: 5px 13px;
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      cursor: pointer; transition: all 0.18s;
+      font-family: 'DM Sans', sans-serif; white-space: nowrap;
+    }
+    .pill:hover { border-color: var(--green); color: var(--green); }
+    .pill.active { background: var(--green); color: white; border-color: var(--green); }
+    .pill.all.active { background: var(--text); border-color: var(--text); }
+
+    /* area pills — softer style */
+    .area-pill {
+      background: var(--card); border: 1.5px solid rgba(60,55,45,0.09);
+      border-radius: 20px; padding: 4px 11px;
+      font-size: 12px; font-weight: 500; color: var(--muted);
+      cursor: pointer; transition: all 0.18s;
+      font-family: 'DM Sans', sans-serif; white-space: nowrap;
+    }
+    .area-pill:hover { background: var(--green-light); border-color: var(--green); color: var(--green); }
+    .area-pill.active { background: var(--green); color: white; border-color: var(--green); }
+
+    /* small province crumb shown in area row */
+    .province-crumb {
+      font-size: 10px; font-weight: 700; color: var(--green);
+      background: var(--green-light); border-radius: 5px;
+      padding: 2px 8px; white-space: nowrap; letter-spacing: 0.2px;
+    }
+
+    /* search */
+    .search-wrap { position: relative; margin-left: auto; }
+    .search-wrap input {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 9px; padding: 7px 12px 7px 34px;
+      font-size: 13px; color: var(--text); font-family: 'DM Sans', sans-serif;
+      width: 190px; transition: all 0.2s; outline: none;
+    }
+    .search-wrap input:focus { border-color: var(--green); background: white; width: 230px; }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; pointer-events: none; }
+
+    /* ── main ────────────────────────────────────────────────── */
+    .main { padding: 2.5rem 5vw 5rem; }
+
+    .entity-section { margin-bottom: 3.5rem; }
+    .row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+    .row-title-group { display: flex; align-items: center; gap: 10px; }
+    .row-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+    .row-icon.spaza  { background: var(--green-light); }
+    .row-icon.farmer { background: var(--brown-light); }
+    .row-icon.maker  { background: #EEF0FA; }
+    .row-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: var(--text); }
+    .row-count { font-size: 12px; color: var(--muted); background: var(--card); border-radius: 20px; padding: 2px 9px; font-weight: 500; }
+    .see-all { font-size: 13px; color: var(--green); font-weight: 600; cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; transition: color 0.2s; white-space: nowrap; }
+    .see-all:hover { color: var(--green-dark); }
+
+    /* horizontal scroll row */
+    .cards-row-wrap { position: relative; padding-left: 0; padding-right: 0; }
+    #search-section { padding-left: 5vw; padding-right: 5vw; }
+    .cards-row {
+      display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px;
+      scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .cards-row::-webkit-scrollbar { display: none; }
+    .cards-row-wrap::after {
+      content: ''; position: absolute; right: 0; top: 0; bottom: 12px; width: 56px;
+      background: linear-gradient(to right, transparent, var(--cream)); pointer-events: none;
+    }
+
+    /* ── entity card ─────────────────────────────────────────── */
+    .entity-card {
+      flex-shrink: 0; width: 216px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      cursor: pointer; scroll-snap-align: start;
+      opacity: 0; transform: translateY(14px);
+    }
+    .entity-card.visible {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 0.36s ease, transform 0.36s ease,
+                  box-shadow 0.22s, border-color 0.22s;
+    }
+    @media (hover: hover) {
+      .entity-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,0.09); border-color: var(--border-mid); }
+    }
+    .entity-card:active { transform: scale(0.97); transition: transform 0.1s; }
+
+    .card-thumb {
+      height: 108px; display: flex; align-items: center; justify-content: center;
+      font-size: 42px; position: relative;
+    }
+    .card-thumb.spaza-bg  { background: var(--green-light); }
+    .card-thumb.farmer-bg { background: var(--brown-light); }
+    .card-thumb.maker-bg  { background: #EEF0FA; }
+
+    .verified-badge {
+      position: absolute; top: 8px; right: 8px;
+      background: var(--green); color: white;
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
+    }
+    .new-badge { background: var(--brown); }
+
+    .card-body { padding: 0.85rem 1rem 1rem; }
+    .card-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-location { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+    .card-province-label { font-size: 10px; color: var(--muted); opacity: 0.65; margin-bottom: 8px; padding-left: 15px; }
+    .card-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+    .card-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 5px; }
+    .tag-green { background: var(--green-light); color: var(--green-dark); }
+    .tag-brown { background: var(--brown-light); color: #6B4E30; }
+    .tag-blue  { background: #EEF0FA; color: #4A5296; }
+    .card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border);
+    }
+    .card-stat { font-size: 11px; color: var(--muted); }
+    .card-stat strong { color: var(--text); font-size: 12px; }
+    .arrow-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--green-light); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: background 0.18s;
+    }
+    .arrow-btn:hover { background: var(--green); }
+    .arrow-btn:hover .arrow-path { stroke: white; }
+    
+    .add-to-cart-btn {
+      background: var(--green); color: white; border: none;
+      padding: 6px 12px; border-radius: 6px; font-size: 12px;
+      cursor: pointer; font-weight: 600;
+    }
+    .add-to-cart-btn:hover { background: var(--green-dark); }
+
+    /* ── empty state ─────────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: 14px; display: none; }
+    .empty-state .empty-icon { font-size: 32px; margin-bottom: 0.6rem; display: block; }
+    .empty-state.show { display: block; }
+
+    .section-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 3.5rem; }
+
+    /* ── toast ───────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--text); color: white;
+      padding: 11px 20px; border-radius: 10px;
+      font-size: 13px; font-weight: 500; z-index: 1000; opacity: 0;
+      transition: all 0.28s; pointer-events: none; white-space: nowrap; max-width: 90vw;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── quantity modal ─────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(30,28,24,.55);
+      z-index: 500; display: flex; align-items: center; justify-content: center;
+      padding: 1rem; opacity: 0; pointer-events: none; transition: opacity .28s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .qty-modal {
+      background: var(--white); border-radius: 20px; padding: 1.5rem;
+      width: 100%; max-width: 320px; text-align: center;
+      position: relative; transform: translateY(20px) scale(.97);
+      transition: transform .3s ease; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    }
+    .modal-backdrop.open .qty-modal { transform: none; }
+    .modal-close {
+      position: absolute; top: 12px; right: 12px;
+      background: var(--card); border: none; border-radius: 50%;
+      width: 32px; height: 32px; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qty-product-info {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;
+      text-align: left;
+    }
+    .qty-emoji { font-size: 36px; }
+    .qty-name { font-size: 15px; font-weight: 600; color: var(--text); }
+    .qty-store { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .qty-price { font-size: 18px; font-weight: 700; color: var(--green); margin-bottom: 1rem; }
+    .qty-controls {
+      display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 1rem;
+    }
+    .qty-btn {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--green-light); border: none; font-size: 20px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--green); font-weight: 600; transition: all .15s;
+    }
+    .qty-btn:hover { background: var(--green); color: white; }
+    .qty-value { font-size: 20px; font-weight: 700; min-width: 40px; }
+    .qty-total { font-size: 14px; color: var(--muted); margin-bottom: 1rem; }
+    .qty-total span { color: var(--text); font-weight: 700; }
+    .qty-add-btn {
+      width: 100%; background: var(--green); color: white; border: none;
+      border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+    }
+    .qty-add-btn:hover { background: var(--green-dark); }
+
+    /* ── footer ──────────────────────────────────────────────── */
+    footer { background:var(--text); color:rgba(255,255,255,.7); padding:3.5rem 5vw 1.5rem; }
+    .footer-main { display:grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr; gap:2.5rem; max-width:1200px; margin:0 auto 2rem; }
+    .footer-brand { display:flex; flex-direction:column; gap:1rem; }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:white; text-decoration:none; }
+    .footer-logo span { color:var(--brown); }
+    .footer-tagline { font-size:14px; line-height:1.5; color:rgba(255,255,255,.5); }
+    .footer-social { display:flex; gap:12px; }
+    .footer-social a { font-size:22px; text-decoration:none; transition:transform .2s; }
+    .footer-social a:hover { transform:scale(1.15); }
+    .footer-col { display:flex; flex-direction:column; gap:10px; }
+    .footer-col h4 { color:white; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .footer-col a { color:rgba(255,255,255,.55); font-size:13px; text-decoration:none; transition:color .2s; }
+    .footer-col a:hover { color:white; }
+    .footer-newsletter p { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:10px; }
+    .newsletter-form { display:flex; gap:8px; }
+    .newsletter-form input { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:10px 12px; font-size:13px; color:white; }
+    .newsletter-form input::placeholder { color:rgba(255,255,255,.35); }
+    .newsletter-form button { background:#4A6B3C; color:white; border:none; border-radius:8px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+    .newsletter-form button:hover { background:#3A552E; }
+    .footer-bottom { border-top:1px solid rgba(255,255,255,.1); padding-top:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; max-width:1200px; margin:0 auto; }
+    .footer-bottom p { font-size:12px; color:rgba(255,255,255,.4); }
+    .footer-legal { display:flex; gap:1.5rem; }
+    .footer-legal a { font-size:12px; color:rgba(255,255,255,.4); text-decoration:none; transition:color .2s; }
+    .footer-legal a:hover { color:white; }
+    @media(max-width:900px) { .footer-main { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column:span 2; } }
+    @media(max-width:580px) { .footer-main { grid-template-columns: 1fr; } .footer-brand { grid-column:span 1; } }
+
+    /* ── responsive ──────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .filter-tier-1 { padding: 0.75rem 4vw; gap: 8px; }
+      .search-wrap { margin-left: 0; width: 100%; order: 10; }
+      .search-wrap input, .search-wrap input:focus { width: 100%; }
+      .filter-tier-2 { padding-left: 4vw; padding-right: 4vw; }
+      .main { padding: 2rem 4vw 4rem; }
+      .entity-card { width: 185px; }
+      .card-thumb { height: 94px; }
+    }
+  </style>
+
+  <script src="granum-nav.js" defer></script>
+  <script src="granum-auth.js" defer></script>
+</head>
+<body>
+
+
+
+<div class="page-header">
+  <div id="debug-status" style="font-size:10px; margin-bottom:4px"></div>
+  <div class="breadcrumb">
+    <a href="granum-home.html">Home</a> <span>›</span> <span>Shop</span>
+  </div>
+  <h1>Browse the <em>marketplace</em></h1>
+  <p>Spaza shops, local farmers, and manufacturers — all in one place.</p>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+
+  <!-- tier 1: province + search -->
+  <div class="filter-tier-1">
+    <span class="filter-label">Province</span>
+    <div class="filter-pills" id="province-pills">
+      <button class="pill all active" onclick="setProvince('all', this)">All</button>
+      <button class="pill" onclick="setProvince('Western Cape', this)">Western Cape</button>
+      <button class="pill" onclick="setProvince('Gauteng', this)">Gauteng</button>
+      <button class="pill" onclick="setProvince('KwaZulu-Natal', this)">KZN</button>
+      <button class="pill" onclick="setProvince('Limpopo', this)">Limpopo</button>
+      <button class="pill" onclick="setProvince('Free State', this)">Free State</button>
+      <button class="pill" onclick="setProvince('North West', this)">North West</button>
+      <button class="pill" onclick="setProvince('Mpumalanga', this)">Mpumalanga</button>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="Search name, area…" oninput="handleSearch()" />
+    </div>
+  </div>
+
+  <!-- tier 2: areas within province (slides in) -->
+  <div class="filter-tier-2" id="area-tier">
+    <div class="tier-divider"></div>
+    <span class="filter-label">Area</span>
+    <span class="province-crumb" id="province-crumb"></span>
+    <div class="filter-pills" id="area-pills"></div>
+  </div>
+
+</div>
+
+<main class="main">
+
+  <section class="entity-section">
+    <div class="row-header">
+      <div class="row-title-group">
+        <div class="row-icon spaza">🏪</div>
+        <span class="row-title">Spaza shops</span>
+        <span class="row-count" id="spaza-count">0</span>
+      </div>
+      <button class="see-all" onclick="window.location.href='granum-shop.html'">See all →</button>
+    </div>
+    <div class="cards-row-wrap">
+      <div class="cards-row" id="spaza-row"></div>
+      <div class="empty-state" id="spaza-empty"><span class="empty-icon">🏪</span>No spaza shops found in this area yet.</div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <section class="entity-section">
+    <div class="row-header">
+      <div class="row-title-group">
+        <div class="row-icon farmer">👨🏾‍🌾</div>
+        <span class="row-title">Local farmers</span>
+        <span class="row-count" id="farmer-count">0</span>
+      </div>
+      <button class="see-all" onclick="showToast('Full directory coming soon!')">See all →</button>
+    </div>
+    <div class="cards-row-wrap">
+      <div class="cards-row" id="farmer-row"></div>
+      <div class="empty-state" id="farmer-empty"><span class="empty-icon">👨🏾‍🌾</span>No farmers found in this area yet.</div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <section class="entity-section">
+    <div class="row-header">
+      <div class="row-title-group">
+        <div class="row-icon maker">🏭</div>
+        <span class="row-title">Manufacturers</span>
+        <span class="row-count" id="maker-count">0</span>
+      </div>
+      <button class="see-all" onclick="showToast('Full directory coming soon!')">See all →</button>
+    </div>
+    <div class="cards-row-wrap">
+      <div class="cards-row" id="maker-row"></div>
+      <div class="empty-state" id="maker-empty"><span class="empty-icon">🏭</span>No manufacturers found in this area yet.</div>
+    </div>
+  </section>
+
+  <hr class="section-divider" />
+
+  <section class="entity-section">
+    <div class="row-header">
+      <div class="row-title-group">
+        <div class="row-icon farmer">📦</div>
+        <span class="row-title">Products</span>
+        <span class="row-count" id="products-count">0</span>
+      </div>
+      <button class="see-all" onclick="document.getElementById('search-input').focus()">Search →</button>
+    </div>
+    <div class="cards-row-wrap">
+      <div class="cards-row" id="products-row"></div>
+      <div class="empty-state" id="products-empty"><span class="empty-icon">📦</span>No products available yet.</div>
+    </div>
+  </section>
+
+<main>
+  <!-- Original content sections (hidden when searching) -->
+  <section class="entity-section" id="original-content">
+    <section class="entity-section">
+      <div class="row-header">
+        <div class="row-title-group">
+          <div class="row-icon spaza">🏪</div>
+          <span class="row-title">Spaza shops</span>
+          <span class="row-count" id="spaza-count">0</span>
+        </div>
+      </div>
+      <div class="cards-row-wrap">
+        <div class="cards-row" id="spaza-row"></div>
+        <div class="empty-state" id="spaza-empty"><span class="empty-icon">🏪</span>No spaza shops found in this area yet.</div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <section class="entity-section">
+      <div class="row-header">
+        <div class="row-title-group">
+          <div class="row-icon farmer">👨🏾‍🌾</div>
+          <span class="row-title">Local farmers</span>
+          <span class="row-count" id="farmer-count">0</span>
+        </div>
+      </div>
+      <div class="cards-row-wrap">
+        <div class="cards-row" id="farmer-row"></div>
+        <div class="empty-state" id="farmer-empty"><span class="empty-icon">👨🏾‍🌾</span>No farmers found in this area yet.</div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <section class="entity-section">
+      <div class="row-header">
+        <div class="row-title-group">
+          <div class="row-icon maker">🏭</div>
+          <span class="row-title">Manufacturers</span>
+          <span class="row-count" id="maker-count">0</span>
+        </div>
+      </div>
+      <div class="cards-row-wrap">
+        <div class="cards-row" id="maker-row"></div>
+        <div class="empty-state" id="maker-empty"><span class="empty-icon">🏭</span>No manufacturers found in this area yet.</div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <section class="entity-section">
+      <div class="row-header">
+        <div class="row-title-group">
+          <div class="row-icon farmer">📦</div>
+          <span class="row-title">Products</span>
+          <span class="row-count" id="products-count">0</span>
+        </div>
+      </div>
+      <div class="cards-row-wrap">
+        <div class="cards-row" id="products-row"></div>
+        <div class="empty-state" id="products-empty"><span class="empty-icon">📦</span>No products available yet.</div>
+      </div>
+    </section>
+  </section>
+
+  <!-- Search Results Section (replaces original when searching) -->
+  <section class="entity-section" id="search-section" style="display:none">
+    <div class="row-header">
+      <div class="row-title-group">
+        <span class="row-title">Search Results</span>
+        <span class="row-count" id="search-count">0</span>
+      </div>
+    </div>
+    
+    <!-- Shops row in search -->
+    <div class="cards-row-wrap" id="search-shops-wrap">
+      <div class="cards-row" id="search-shops-row"></div>
+      <div class="empty-state" id="search-shops-empty">No shops found.</div>
+    </div>
+    
+    <hr class="section-divider" />
+    
+    <!-- Products row in search -->
+    <div class="row-header" style="margin-top:1.5rem">
+      <div class="row-title-group">
+        <div class="row-icon farmer">📦</div>
+        <span class="row-title">Products</span>
+        <span class="row-count" id="search-products-count">0</span>
+      </div>
+    </div>
+    <div class="cards-row-wrap" id="search-products-wrap">
+      <div class="cards-row" id="search-products-row"></div>
+      <div class="empty-state" id="search-products-empty">No products found.</div>
+    </div>
+    
+    <div class="empty-state" id="search-empty">No results found.</div>
+  </section>
+</main>
+
+<!-- Product Quantity Modal -->
+<div class="modal-backdrop" id="qty-modal" onclick="closeQtyModal(event)">
+  <div class="qty-modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeQtyModal()">✕</button>
+    <div class="qty-product-info">
+      <span class="qty-emoji" id="qty-emoji">📦</span>
+      <div>
+        <div class="qty-name" id="qty-name">Product Name</div>
+        <div class="qty-store" id="qty-store">From: Store Name</div>
+      </div>
+    </div>
+    <div class="qty-price" id="qty-price">R0.00</div>
+    <div class="qty-controls">
+      <button class="qty-btn" onclick="changeQty(-1)">−</button>
+      <span class="qty-value" id="qty-value">1</span>
+      <button class="qty-btn" onclick="changeQty(1)">＋</button>
+    </div>
+    <div class="qty-total">Total: <span id="qty-total">R0.00</span></div>
+    <button class="qty-add-btn" id="qty-add-btn" onclick="addToCartFromModal()">Add to Cart</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // provinces and the areas (towns/townships) within each
+  const PROVINCE_AREAS = {
+    'Western Cape':  ['Cape Town', 'Khayelitsha', 'Langa', 'Gugulethu', 'Mitchells Plain', 'Stellenbosch'],
+    'Gauteng':       ['Soweto', 'Sandton', 'Tembisa', 'Pretoria', 'Ekurhuleni'],
+    'KwaZulu-Natal': ['Durban', 'Umlazi', 'Pinetown', 'Richards Bay'],
+    'Limpopo':       ['Polokwane', 'Tzaneen', 'Louis Trichardt'],
+    'Free State':    ['Bloemfontein', 'Welkom', 'Harrismith'],
+    'North West':    ['Rustenburg', 'Mafikeng', 'Klerksdorp'],
+    'Mpumalanga':    ['Nelspruit', 'Witbank', 'Secunda'],
+};
+
+  // Store data from API
+  let spazas = [];
+  let farmers = [];
+  let makers = [];
+  let products = [];
+
+  // filter state
+  let activeProvince = 'all';
+  let activeArea     = 'all';
+  let searchQuery    = '';
+
+  // province tap — populate area tier below it
+  function setProvince(province, el) {
+    activeProvince = province;
+    activeArea = 'all';
+    document.querySelectorAll('#province-pills .pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+
+    const tier2    = document.getElementById('area-tier');
+    const areaPils = document.getElementById('area-pills');
+    const crumb    = document.getElementById('province-crumb');
+
+    if (province === 'all') {
+      tier2.classList.remove('open');
+      areaPils.innerHTML = '';
+    } else {
+      crumb.textContent = province;
+      const areas = PROVINCE_AREAS[province] || [];
+      areaPils.innerHTML =
+        `<button class="area-pill active" onclick="setArea('all',this)">All areas</button>` +
+        areas.map(a => `<button class="area-pill" onclick="setArea('${a}',this)">${a}</button>`).join('');
+      tier2.classList.add('open');
+    }
+    renderAll();
+  }
+
+  // area tap within a province
+  function setArea(area, el) {
+    activeArea = area;
+    document.querySelectorAll('#area-pills .area-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    renderAll();
+  }
+
+  // search results - separate shops and products
+  let searchShops = [];
+  let searchProducts = [];
+
+  function handleSearch() {
+    searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+    
+    if (searchQuery.length < 2) {
+      searchShops = [];
+      searchProducts = [];
+      renderAll();
+      return;
+    }
+    
+    // Search both shops AND products
+    searchShops = [];
+    searchProducts = [];
+    
+    // Search shops by name
+    const allShops = [...spazas, ...farmers, ...makers];
+    allShops.forEach(shop => {
+      if (shop.name.toLowerCase().includes(searchQuery) || 
+          shop.area.toLowerCase().includes(searchQuery)) {
+        searchShops.push(shop);
+      }
+    });
+    
+    // Search products by name
+    products.forEach(prod => {
+      if (prod.name.toLowerCase().includes(searchQuery)) {
+        searchProducts.push(prod);
+      }
+    });
+    
+    renderSearchResults();
+  }
+
+  // Quantity modal state
+  let modalProduct = null;
+  let modalQty = 1;
+
+  // ── Option B: Cohesive render helpers ─────────────────────────────
+  function renderShopTiles(list) {
+    const row = document.getElementById('search-shops-row');
+    const empty = document.getElementById('search-shops-empty');
+    if (!row) return;
+    
+    if (!list.length) {
+      row.innerHTML = '';
+      empty?.classList.add('show');
+      return;
+    }
+    empty?.classList.remove('show');
+    row.innerHTML = list.map(s => `
+      <div class="entity-card" onclick="window.location.href='granum-profile.html?id=${s.id}&type=${s.role}'">
+        <div class="card-thumb spaza-bg">
+          <span style="font-size:40px">${s.icon}</span>
+          ${s.verified ? '<span class="verified-badge">✓ Verified</span>' : ''}
+        </div>
+        <div class="card-body">
+          <div class="card-name">${s.name}</div>
+          <div class="card-location">${PIN} ${s.area}</div>
+          <div class="card-province-label">${s.province}</div>
+          <div class="card-footer">
+            <div class="card-stat"><strong>${s.stat}</strong></div>
+            <button class="arrow-btn" aria-label="View">${ARR}</button>
+          </div>
+        </div>
+      </div>`).join('');
+    // animate
+    row.querySelectorAll('.entity-card').forEach((c, i) => {
+      setTimeout(() => c.classList.add('visible'), i * 48);
+    });
+  }
+
+  function renderProductTiles(list) {
+    const row = document.getElementById('search-products-row');
+    const empty = document.getElementById('search-products-empty');
+    const countEl = document.getElementById('search-products-count');
+    if (!row) return;
+    
+    if (!list.length) {
+      row.innerHTML = '';
+      empty?.classList.add('show');
+      if (countEl) countEl.textContent = '0';
+      return;
+    }
+    empty?.classList.remove('show');
+    if (countEl) countEl.textContent = list.length;
+    row.innerHTML = list.map(p => `
+      <div class="entity-card product-card" onclick="openQtyModal('${p.id}')">
+        <div class="card-thumb farmer-bg">
+          <span style="font-size:40px">${p.emoji || '📦'}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-name">${p.name}</div>
+          <div class="card-location">From: ${p.business_name || 'Unknown'}</div>
+          <div class="card-province-label">R${(p.price_cents || 0) / 100} / ${p.unit}</div>
+          <div class="card-footer">
+            <button class="add-to-cart-btn" onclick="event.stopPropagation(); openQtyModal('${p.id}')">Add to cart</button>
+          </div>
+        </div>
+      </div>`).join('');
+    row.querySelectorAll('.entity-card').forEach((c, i) => {
+      setTimeout(() => c.classList.add('visible'), i * 48);
+    });
+  }
+
+  function renderSearchResults() {
+    // Hide all original rows
+    document.getElementById('spaza-row').style.display = 'none';
+    document.getElementById('farmer-row').style.display = 'none';
+    document.getElementById('maker-row').style.display = 'none';
+    
+    const searchSection = document.getElementById('search-section');
+    const searchEmpty = document.getElementById('search-empty');
+    const searchCount = document.getElementById('search-count');
+    const searchShopsRow = document.getElementById('search-shops-row');
+    const searchShopsEmpty = document.getElementById('search-shops-empty');
+    const searchProductsRow = document.getElementById('search-products-row');
+    const searchProductsEmpty = document.getElementById('search-products-empty');
+    const searchProductsCount = document.getElementById('search-products-count');
+    
+if (!searchShops.length && !searchProducts.length) {
+      searchSection.style.display = 'none';
+      document.getElementById('original-content').style.display = 'block';
+      // Restore original rows
+      renderRow('spaza-row', 'spaza-empty', 'spaza-count', spazas, 'spaza-bg', 'tag-green', 'spaza');
+      renderRow('farmer-row', 'farmer-empty', 'farmer-count', farmers, 'farmer-bg', 'tag-brown', 'farmer');
+      renderRow('maker-row', 'maker-empty', 'maker-count', makers, 'maker-bg', 'tag-blue', 'manufacturer');
+      return;
+    }
+    
+    // Hide original content, show search section
+    document.getElementById('original-content').style.display = 'none';
+    searchSection.style.display = 'block';
+    searchEmpty.classList.remove('show');
+    searchCount.textContent = searchShops.length + searchProducts.length;
+    
+    renderShopTiles(searchShops);
+    renderProductTiles(searchProducts);
+  }
+
+  function openQtyModal(productId) {
+    modalProduct = products.find(p => p.id === productId);
+    if (!modalProduct) return;
+    
+    modalQty = 1;
+    document.getElementById('qty-emoji').textContent = modalProduct.emoji || '📦';
+    document.getElementById('qty-name').textContent = modalProduct.name;
+    document.getElementById('qty-store').textContent = `From: ${modalProduct.business_name || 'Unknown Shop'}`;
+    document.getElementById('qty-price').textContent = `R${(modalProduct.price_cents || 0) / 100}`;
+    updateQtyDisplay();
+    document.getElementById('qty-modal').classList.add('open');
+  }
+
+  function closeQtyModal(e) {
+    if (e && e.target !== document.getElementById('qty-modal')) return;
+    document.getElementById('qty-modal').classList.remove('open');
+    modalProduct = null;
+  }
+
+  function changeQty(delta) {
+    modalQty = Math.max(1, modalQty + delta);
+    updateQtyDisplay();
+  }
+
+  function updateQtyDisplay() {
+    if (!modalProduct) return;
+    const unitPrice = (modalProduct.price_cents || 0) / 100;
+    document.getElementById('qty-value').textContent = modalQty;
+    document.getElementById('qty-total').textContent = `R${(unitPrice * modalQty).toFixed(2)}`;
+    document.getElementById('qty-add-btn').textContent = modalQty > 1 ? `Add ${modalQty} to Cart` : 'Add to Cart';
+  }
+
+  function addToCartFromModal() {
+    if (!modalProduct) return;
+    
+    const cart = JSON.parse(localStorage.getItem('lh_cart') || '[]');
+    const existing = cart.find(item => item.id === modalProduct.id);
+    
+    if (existing) {
+      existing.qty += modalQty;
+    } else {
+      cart.push({
+        id: modalProduct.id,
+        qty: modalQty,
+        price: (modalProduct.price_cents || 0) / 100,
+        price_cents: modalProduct.price_cents,
+        name: modalProduct.name,
+        unit: modalProduct.unit,
+        emoji: modalProduct.emoji,
+        business_name: modalProduct.business_name,
+        unitQty: modalQty
+      });
+    }
+    
+    localStorage.setItem('lh_cart', JSON.stringify(cart));
+    updateCartBadge();
+    closeQtyModal();
+    showToast(`Added ${modalQty} × ${modalProduct.name} to cart!`);
+  }
+
+  function addProductToCart(productId) {
+    openQtyModal(productId);
+  }
+
+  // does an entity pass current filters?
+  function matches(item) {
+    const provOk   = activeProvince === 'all' || item.province === activeProvince;
+    const areaOk   = activeArea     === 'all' || item.area     === activeArea;
+    const q        = searchQuery.toLowerCase();
+    const searchOk = !q ||
+      item.name.toLowerCase().includes(q) ||
+      item.area.toLowerCase().includes(q) ||
+      item.province.toLowerCase().includes(q) ||
+      item.tags.some(t => t.toLowerCase().includes(q));
+    return provOk && areaOk && searchOk;
+  }
+
+  // shared SVG snippets
+  const PIN = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="5" r="2.2" stroke="#7A776F" stroke-width="1.2"/><path d="M6 1C3.79 1 2 2.79 2 5c0 3 4 7 4 7s4-4 4-7c0-2.21-1.79-4-4-4z" stroke="#7A776F" stroke-width="1.2" fill="none"/></svg>`;
+  const ARR = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path class="arrow-path" d="M2.5 6h7M6.5 3l3 3-3 3" stroke="#4A6B3C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  function buildCard(e, thumbCls, tagCls, entityType) {
+    return `
+      <div class="entity-card" onclick="window.location.href='granum-profile.html?id=${e.id}&type=${entityType}'">
+        <div class="card-thumb ${thumbCls}">
+          <span style="font-size:40px">${e.icon}</span>
+          ${e.verified ? '<span class="verified-badge">✓ Verified</span>' : ''}
+          ${e.isNew    ? '<span class="verified-badge new-badge">New</span>' : ''}
+        </div>
+        <div class="card-body">
+          <div class="card-name">${e.name}</div>
+          <div class="card-location">${PIN} ${e.area}</div>
+          <div class="card-province-label">${e.province}</div>
+          <div class="card-tags">${e.tags.map(t=>`<span class="card-tag ${tagCls}">${t}</span>`).join('')}</div>
+          <div class="card-footer">
+            <div class="card-stat"><strong>${e.stat}</strong></div>
+            <button class="arrow-btn" aria-label="View">${ARR}</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderRow(rowId, emptyId, countId, data, thumbCls, tagCls, entityType) {
+    const row    = document.getElementById(rowId);
+    const empty  = document.getElementById(emptyId);
+    const countEl = document.getElementById(countId);
+    const filtered = data.filter(matches);
+
+    countEl.textContent = filtered.length;
+    if (!filtered.length) {
+      row.innerHTML = '';
+      empty.classList.add('show');
+      return;
+    }
+    empty.classList.remove('show');
+    row.innerHTML = filtered.map(e => buildCard(e, thumbCls, tagCls, entityType)).join('');
+    // lightweight stagger — just CSS opacity/translate, no JS animation loops
+    row.querySelectorAll('.entity-card').forEach((card, i) => {
+      setTimeout(() => card.classList.add('visible'), i * 48);
+    });
+  }
+
+  // Render row without search filter
+  function renderRowNoFilter(rowId, emptyId, countId, data, thumbCls, tagCls, entityType) {
+    const row    = document.getElementById(rowId);
+    const empty  = document.getElementById(emptyId);
+    const countEl = document.getElementById(countId);
+
+    countEl.textContent = data.length;
+    if (!data.length) {
+      row.innerHTML = '';
+      empty.classList.add('show');
+      return;
+    }
+    empty.classList.remove('show');
+    row.innerHTML = data.map(e => buildCard(e, thumbCls, tagCls, entityType)).join('');
+    row.querySelectorAll('.entity-card').forEach((card, i) => {
+      setTimeout(() => card.classList.add('visible'), i * 48);
+    });
+  }
+
+function convertProfileToCard(p) {
+    const roleMap = { spaza_owner: 'spaza', farmer: 'farmer', manufacturer: 'maker' };
+    const type = roleMap[p.role] || 'spaza';
+    const iconMap = { spaza_owner: '🏪', farmer: '👨🏾‍🌾', manufacturer: '🏭' };
+    return {
+      id: p.id,
+      name: p.business_name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unnamed Shop',
+      province: p.province || '',
+      area: p.area || '',
+      icon: iconMap[p.role] || '🏪',
+      tags: p.category ? [p.category] : [],
+      stat: p.rating_count ? `${p.rating_count} reviews` : 'New',
+      verified: p.verified || false,
+      isNew: p.created_at && (Date.now() - new Date(p.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000,
+      role: p.role, // include role for linking
+    };
+  }
+
+  async function loadProfilesFromAPI() {
+    const debugEl = document.getElementById('debug-status');
+    try {
+      if (debugEl) debugEl.textContent = 'Loading...';
+      
+      // Fetch all profiles from /fsm endpoint
+      const profilesRes = await fetch(`${API}/fsm/profiles?limit=50`);
+      const profilesData = await profilesRes.json();
+      
+      if (profilesData.profiles) {
+        const roleMap = { spaza_owner: [], farmer: [], manufacturer: [] };
+        profilesData.profiles.forEach(p => {
+          const converted = convertProfileToCard(p);
+          roleMap[p.role].push(converted);
+        });
+        
+        spazas = roleMap.spaza_owner;
+        farmers = roleMap.farmer;
+        makers = roleMap.manufacturer;
+      }
+      
+      // Fetch all products
+      const productsRes = await fetch(`${API}/fsm/products?limit=100`);
+      const productsData = await productsRes.json();
+      
+      if (productsData.products) {
+        products = productsData.products;
+      }
+      
+      if (debugEl) debugEl.textContent = `Loaded: ${spazas.length} shops, ${products.length} products`;
+    } catch (err) {
+      if (debugEl) debugEl.textContent = 'Error: ' + err.message;
+      console.error('[Shop] Failed to load:', err);
+    }
+    
+    renderAll();
+  }
+
+function renderAll() {
+    console.log('[Shop] renderAll called. spazas:', spazas.length, 'farmers:', farmers.length, 'makers:', makers.length);
+    // Hide search results if not searching
+    if (searchQuery.length < 2) {
+      document.getElementById('search-section').style.display = 'none';
+      document.getElementById('spaza-row').style.display = 'block';
+      document.getElementById('farmer-row').style.display = 'block';
+      document.getElementById('maker-row').style.display = 'block';
+    }
+    renderRow('spaza-row',  'spaza-empty',  'spaza-count',  spazas,  'spaza-bg',  'tag-green',  'spaza');
+    renderRow('farmer-row', 'farmer-empty', 'farmer-count', farmers, 'farmer-bg', 'tag-brown',  'farmer');
+    renderRow('maker-row',  'maker-empty', 'maker-count',  makers,  'maker-bg', 'tag-blue',   'manufacturer');
+    
+    // Render products row
+    renderProducts();
+  }
+
+  function renderProducts() {
+    const row = document.getElementById('products-row');
+    const empty = document.getElementById('products-empty');
+    const countEl = document.getElementById('products-count');
+    
+    if (!products.length) {
+      row.innerHTML = '';
+      empty.classList.add('show');
+      countEl.textContent = '0';
+      return;
+    }
+    
+    empty.classList.remove('show');
+    countEl.textContent = products.length;
+    
+    row.innerHTML = products.map(p => `
+      <div class="entity-card product-card" onclick="openQtyModal('${p.id}')">
+        <div class="card-thumb farmer-bg">
+          <span style="font-size:40px">${p.emoji || '📦'}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-name">${p.name}</div>
+          <div class="card-location">From: ${p.business_name || 'Unknown'}</div>
+          <div class="card-province-label">R${(p.price_cents || 0) / 100} / ${p.unit}</div>
+          <div class="card-footer">
+            <button class="add-to-cart-btn" onclick="event.stopPropagation(); openQtyModal('${p.id}')">Add to cart</button>
+          </div>
+        </div>
+      </div>`).join('');
+    
+row.querySelectorAll('.entity-card').forEach((card, i) => {
+      setTimeout(() => card.classList.add('visible'), i * 48);
+    });
+  }
+
+  function updateCartBadge() {
+    const cart = JSON.parse(localStorage.getItem('lh_cart') || '[]');
+    const el = document.getElementById('lh-cart-count');
+    if (el) el.textContent = cart.reduce((s,i) => s + i.qty, 0);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  loadProfilesFromAPI().catch(err => console.error('[Shop] Init error:', err));
+  
+  // Refresh data when page becomes visible (e.g., switching tabs)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) loadProfilesFromAPI();
+  });
+  
+  updateCartBadge();
+</script>
+<footer>
+  <div class="footer-main">
+    <div class="footer-brand">
+      <a href="granum-home.html" class="footer-logo">Granum</a>
+      <p class="footer-tagline">Connecting spaza shops to farmers & manufacturers.</p>
+      <div class="footer-social">
+        <a href="#" title="Facebook">📘</a>
+        <a href="#" title="Instagram">📸</a>
+        <a href="#" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Shop</h4>
+      <a href="granum-shop.html">Browse Products</a>
+      <a href="granum-cart.html">My Cart</a>
+      <a href="granum-vouchers.html">Gift Vouchers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="granum-about.html">About Us</a>
+      <a href="granum-howitworks.html">How It Works</a>
+      <a href="granum-leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="granum-contact.html">Contact Us</a>
+      <a href="#">FAQs</a>
+      <a href="#">Delivery Info</a>
+    </div>
+    <div class="footer-col footer-newsletter">
+      <h4>Stay Updated</h4>
+      <p>Get the latest deals and updates.</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Your email" />
+        <button>Subscribe</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Granum. All rights reserved.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

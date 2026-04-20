@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Granum — Leaderboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="granum-nav.js"  defer></script>
+  <script src="granum-auth.js" defer></script>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --green:#4A6B3C; --green-dark:#3A552E; --green-light:#EAF3DE;
+      --brown:#8B6946; --brown-light:#F5EDE0;
+      --cream:#FDFAF6; --card:#F2EEE7;
+      --text:#2E2C28; --muted:#7A776F;
+      --white:#FFFFFF;
+      --border:rgba(60,55,45,0.11); --border-mid:rgba(60,55,45,0.2);
+      --gold:#C9A84C; --gold-light:#FEF9EC; --gold-border:#EDD97A;
+      --silver:#8A9BB0; --silver-light:#F0F4F8;
+      --bronze:#A0674A; --bronze-light:#F8EFE9;
+    }
+    html { scroll-behavior:smooth; }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); overflow-x:hidden; }
+
+    /* ── reveal ──────────────────────────────────────────────── */
+    .reveal       { opacity:0; transform:translateY(20px); transition:opacity .55s ease,transform .55s ease; }
+    .reveal-left  { opacity:0; transform:translateX(-24px); transition:opacity .55s ease,transform .55s ease; }
+    .reveal-right { opacity:0; transform:translateX(24px);  transition:opacity .55s ease,transform .55s ease; }
+    .reveal.up,.reveal-left.up,.reveal-right.up { opacity:1; transform:none; }
+
+    /* ── hero ────────────────────────────────────────────────── */
+    .hero {
+      background:var(--green); padding:3.5rem 5vw 3rem;
+      display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center;
+    }
+    .hero-eyebrow { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:.8rem; display:block; }
+    .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2rem,4vw,3rem); font-weight:900; color:white; letter-spacing:-.5px; line-height:1.1; margin-bottom:.8rem; }
+    .hero h1 em { color:rgba(255,255,255,.65); font-style:normal; }
+    .hero p { font-size:15px; color:rgba(255,255,255,.75); line-height:1.75; max-width:400px; }
+
+    /* period pills */
+    .period-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .period-pill {
+      background:rgba(255,255,255,.12); color:rgba(255,255,255,.75);
+      border:1px solid rgba(255,255,255,.2); border-radius:20px;
+      padding:6px 16px; font-size:13px; font-weight:600;
+      cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .18s;
+    }
+    .period-pill:hover  { background:rgba(255,255,255,.2); }
+    .period-pill.active { background:white; color:var(--green); border-color:white; }
+
+    /* live indicator */
+    .live-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+      border-radius:20px; padding:5px 12px;
+      font-size:12px; color:rgba(255,255,255,.8); font-weight:500;
+    }
+    .live-dot { width:7px; height:7px; border-radius:50%; background:#6BCB77; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── tabs ────────────────────────────────────────────────── */
+    .tabs-bar {
+      background:var(--white); border-bottom:1px solid var(--border);
+      padding:0 5vw; display:flex; gap:0; overflow-x:auto;
+      scrollbar-width:none;
+    }
+    .tabs-bar::-webkit-scrollbar { display:none; }
+    .tab-btn {
+      background:none; border:none; font-family:'DM Sans',sans-serif;
+      font-size:14px; font-weight:500; color:var(--muted);
+      padding:14px 20px; cursor:pointer; position:relative;
+      transition:color .18s; white-space:nowrap;
+    }
+    .tab-btn::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--green); transform:scaleX(0); transition:transform .2s; }
+    .tab-btn.active { color:var(--green); }
+    .tab-btn.active::after { transform:scaleX(1); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* ── main layout ─────────────────────────────────────────── */
+    .main { padding:2.5rem 5vw 5rem; display:grid; grid-template-columns:1fr 320px; gap:2.5rem; align-items:start; }
+
+    /* ── podium ──────────────────────────────────────────────── */
+    .podium-wrap { margin-bottom:2.5rem; }
+    .podium {
+      display:flex; align-items:flex-end; justify-content:center;
+      gap:12px; padding:2rem 0 0;
+    }
+    .podium-card {
+      flex:1; max-width:200px; text-align:center;
+      border-radius:16px; overflow:hidden;
+      position:relative; transition:transform .25s;
+    }
+    .podium-card:hover { transform:translateY(-4px); }
+
+    .podium-card.gold   { background:var(--gold-light);   border:2px solid var(--gold-border); }
+    .podium-card.silver { background:var(--silver-light); border:1.5px solid #CBD5E0; }
+    .podium-card.bronze { background:var(--bronze-light); border:1.5px solid #D4A896; }
+
+    /* order: silver(2nd) | gold(1st) | bronze(3rd) */
+    .podium-card.silver { order:1; }
+    .podium-card.gold   { order:2; }
+    .podium-card.bronze { order:3; }
+
+    .podium-medal {
+      font-size:32px; margin:1rem 0 .4rem; display:block;
+    }
+    .podium-rank {
+      font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
+      margin-bottom:4px; display:block;
+    }
+    .gold   .podium-rank { color:var(--gold); }
+    .silver .podium-rank { color:var(--silver); }
+    .bronze .podium-rank { color:var(--bronze); }
+
+    .podium-name {
+      font-family:'Playfair Display',serif;
+      font-size:1rem; font-weight:700; color:var(--text);
+      padding:0 .6rem; line-height:1.2; display:block;
+      margin-bottom:4px;
+    }
+    .podium-area { font-size:11px; color:var(--muted); margin-bottom:.6rem; display:block; }
+    .podium-score {
+      font-family:'Playfair Display',serif;
+      font-size:1.4rem; font-weight:900; display:block;
+      padding-bottom:.8rem;
+    }
+    .gold   .podium-score { color:var(--gold); }
+    .silver .podium-score { color:var(--silver); }
+    .bronze .podium-score { color:var(--bronze); }
+
+    .podium-bar {
+      height:8px; width:100%;
+    }
+    .gold   .podium-bar { background:var(--gold); }
+    .silver .podium-bar { background:var(--silver); }
+    .bronze .podium-bar { background:var(--bronze); }
+
+    /* crown on gold */
+    .podium-card.gold::before {
+      content:'👑'; position:absolute; top:-14px; left:50%;
+      transform:translateX(-50%);
+      font-size:22px; display:block;
+    }
+
+    /* ── full rankings list ──────────────────────────────────── */
+    .rankings-list { display:flex; flex-direction:column; gap:8px; }
+    .rank-card {
+      background:var(--white); border:1px solid var(--border);
+      border-radius:14px; padding:1rem 1.2rem;
+      display:flex; align-items:center; gap:14px;
+      transition:all .22s; cursor:pointer; text-decoration:none; color:inherit;
+    }
+    .rank-card:hover { transform:translateX(4px); border-color:var(--border-mid); box-shadow:0 4px 16px rgba(0,0,0,.06); }
+    .rank-card.rank-1 { background:var(--gold-light);   border-color:var(--gold-border); }
+    .rank-card.rank-2 { background:var(--silver-light); border-color:#CBD5E0; }
+    .rank-card.rank-3 { background:var(--bronze-light); border-color:#D4A896; }
+
+    .rank-num {
+      font-family:'Playfair Display',serif;
+      font-size:1.3rem; font-weight:900; min-width:32px; text-align:center;
+      color:var(--muted);
+    }
+    .rank-card.rank-1 .rank-num { color:var(--gold); }
+    .rank-card.rank-2 .rank-num { color:var(--silver); }
+    .rank-card.rank-3 .rank-num { color:var(--bronze); }
+
+    .rank-avatar {
+      width:44px; height:44px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; flex-shrink:0;
+    }
+    .rank-avatar.spaza  { background:var(--green-light); }
+    .rank-avatar.farmer { background:var(--brown-light); }
+    .rank-avatar.maker  { background:#EEF0FA; }
+
+    .rank-info { flex:1; min-width:0; }
+    .rank-name { font-size:14px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .rank-meta { font-size:12px; color:var(--muted); margin-top:2px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .rank-badge { background:var(--green-light); color:var(--green-dark); font-size:10px; font-weight:700; padding:1px 7px; border-radius:5px; }
+    .rank-badge.brown { background:var(--brown-light); color:#5C3D22; }
+
+    .rank-right { text-align:right; flex-shrink:0; }
+    .rank-score { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:900; color:var(--green); display:block; line-height:1; }
+    .rank-score-label { font-size:10px; color:var(--muted); margin-top:2px; display:block; }
+
+    /* progress bar on rank card */
+    .rank-bar-wrap { width:80px; }
+    .rank-bar { height:4px; background:var(--card); border-radius:2px; margin-top:6px; overflow:hidden; }
+    .rank-bar-fill { height:100%; background:var(--green); border-radius:2px; transition:width 1s ease; }
+    .rank-card.rank-1 .rank-bar-fill { background:var(--gold); }
+    .rank-card.rank-2 .rank-bar-fill { background:var(--silver); }
+    .rank-card.rank-3 .rank-bar-fill { background:var(--bronze); }
+
+    .rank-trend { font-size:12px; font-weight:700; margin-top:2px; display:block; }
+    .rank-trend.up   { color:#4A6B3C; }
+    .rank-trend.down { color:#C0392B; }
+    .rank-trend.same { color:var(--muted); }
+
+    /* ── sidebar ─────────────────────────────────────────────── */
+    .sidebar { display:flex; flex-direction:column; gap:1.2rem; }
+    .side-card { background:var(--white); border:1px solid var(--border); border-radius:16px; padding:1.3rem 1.4rem; }
+    .side-card h3 { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); margin-bottom:1rem; }
+
+    /* how scoring works */
+    .score-item { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); }
+    .score-item:last-child { border:none; }
+    .score-icon { width:32px; height:32px; border-radius:9px; background:var(--green-light); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+    .score-text { flex:1; font-size:13px; color:var(--text); }
+    .score-pts { font-family:'Playfair Display',serif; font-size:14px; font-weight:700; color:var(--green); }
+
+    /* my rank card */
+    .my-rank-card {
+      background:var(--green); border-radius:14px; padding:1.2rem 1.3rem;
+      color:white;
+    }
+    .my-rank-card h3 { color:rgba(255,255,255,.6); }
+    .my-rank-name { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:white; margin-bottom:4px; }
+    .my-rank-row { display:flex; align-items:center; justify-content:space-between; margin-top:.8rem; }
+    .my-rank-num { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:900; color:white; line-height:1; }
+    .my-rank-label { font-size:11px; color:rgba(255,255,255,.6); margin-top:2px; }
+    .my-rank-pts { text-align:right; }
+    .my-rank-pts .pts { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:white; }
+    .my-rank-pts .pl  { font-size:11px; color:rgba(255,255,255,.55); display:block; }
+
+    /* recent activity */
+    .activity-item { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+    .activity-item:last-child { border:none; }
+    .activity-dot { width:8px; height:8px; border-radius:50%; background:var(--green); margin-top:5px; flex-shrink:0; }
+    .activity-text { font-size:13px; color:var(--text); line-height:1.5; }
+    .activity-time { font-size:11px; color:var(--muted); margin-top:2px; display:block; }
+
+    /* ── stats bar ───────────────────────────────────────────── */
+    .stats-strip {
+      background:var(--card); border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+      padding:1.4rem 5vw;
+      display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+      background:linear-gradient(to right, var(--border) 1px, transparent 1px),
+                 linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+      background-size: 25% 100%;
+    }
+    .strip-stat { padding:.8rem 1.5rem; background:var(--card); }
+    .strip-stat .n { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:900; color:var(--green); line-height:1; }
+    .strip-stat .l { font-size:12px; color:var(--muted); margin-top:3px; }
+
+    /* ── footer ──────────────────────────────────────────────── */
+    footer { background:var(--text); color:rgba(255,255,255,.7); padding:3.5rem 5vw 1.5rem; }
+    .footer-main { display:grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr; gap:2.5rem; max-width:1200px; margin:0 auto 2rem; }
+    .footer-brand { display:flex; flex-direction:column; gap:1rem; }
+    .footer-logo { font-family:'Playfair Display',serif; font-size:22px; font-weight:900; color:white; text-decoration:none; }
+    .footer-logo span { color:var(--brown); }
+    .footer-tagline { font-size:14px; line-height:1.5; color:rgba(255,255,255,.5); }
+    .footer-social { display:flex; gap:12px; }
+    .footer-social a { font-size:22px; text-decoration:none; transition:transform .2s; }
+    .footer-social a:hover { transform:scale(1.15); }
+    .footer-col { display:flex; flex-direction:column; gap:10px; }
+    .footer-col h4 { color:white; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .footer-col a { color:rgba(255,255,255,.55); font-size:13px; text-decoration:none; transition:color .2s; }
+    .footer-col a:hover { color:white; }
+    .footer-newsletter p { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:10px; }
+    .newsletter-form { display:flex; gap:8px; }
+    .newsletter-form input { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:10px 12px; font-size:13px; color:white; }
+    .newsletter-form input::placeholder { color:rgba(255,255,255,.35); }
+    .newsletter-form button { background:var(--green); color:white; border:none; border-radius:8px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+    .newsletter-form button:hover { background:var(--green-dark); }
+    .footer-bottom { border-top:1px solid rgba(255,255,255,.1); padding-top:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; max-width:1200px; margin:0 auto; }
+    .footer-bottom p { font-size:12px; color:rgba(255,255,255,.4); }
+    .footer-legal { display:flex; gap:1.5rem; }
+    .footer-legal a { font-size:12px; color:rgba(255,255,255,.4); text-decoration:none; transition:color .2s; }
+    .footer-legal a:hover { color:white; }
+    @media(max-width:900px) { .footer-main { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column:span 2; } }
+    @media(max-width:580px) { .footer-main { grid-template-columns: 1fr; } .footer-brand { grid-column:span 1; } }
+
+    .toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(12px); background:var(--text); color:white; padding:11px 20px; border-radius:10px; font-size:13px; font-weight:500; z-index:600; opacity:0; transition:all .28s; pointer-events:none; white-space:nowrap; max-width:90vw; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    @media(max-width:900px) { .main{grid-template-columns:1fr} .hero{grid-template-columns:1fr;gap:2rem} .stats-strip{grid-template-columns:1fr 1fr} footer{grid-template-columns:1fr} }
+    @media(max-width:600px) { .podium{gap:6px} .podium-card{max-width:120px} .podium-name{font-size:.85rem} .stats-strip{grid-template-columns:1fr 1fr} }
+  </style>
+</head>
+<body>
+
+<!-- hero -->
+<section class="hero">
+  <div class="reveal-left">
+    <span class="hero-eyebrow">Community rankings</span>
+    <h1>The Granum<br><em>Leaderboard</em></h1>
+    <p>The most active spaza shops, farmers, and manufacturers on the platform this month. Updated every 24 hours.</p>
+  </div>
+  <div class="reveal-right" style="display:flex;flex-direction:column;gap:1rem;align-items:flex-start">
+    <div class="live-badge">
+      <span class="live-dot"></span>
+      Updated daily at midnight
+    </div>
+    <div class="period-row">
+      <button class="period-pill active" onclick="setPeriod('month',this)">This month</button>
+      <button class="period-pill" onclick="setPeriod('week',this)">This week</button>
+      <button class="period-pill" onclick="setPeriod('alltime',this)">All time</button>
+    </div>
+  </div>
+</section>
+
+<!-- stats strip -->
+<div class="stats-strip">
+  <div class="strip-stat reveal"><div class="n">340</div><div class="l">Active shops</div></div>
+  <div class="strip-stat reveal"><div class="n" id="stat-orders">1,284</div><div class="l">Orders this month</div></div>
+  <div class="strip-stat reveal"><div class="n">87</div><div class="l">Suppliers listed</div></div>
+  <div class="strip-stat reveal"><div class="n" id="stat-value">R284k</div><div class="l">Total GMV this month</div></div>
+</div>
+
+<!-- tabs -->
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('spazas',this)">🏪 Spaza shops</button>
+  <button class="tab-btn" onclick="switchTab('farmers',this)">👨🏾‍🌾 Farmers</button>
+  <button class="tab-btn" onclick="switchTab('makers',this)">🏭 Manufacturers</button>
+</div>
+
+<div class="main">
+  <div>
+    <!-- spazas tab -->
+    <div class="tab-panel active" id="panel-spazas">
+      <div class="podium-wrap reveal" id="podium-spazas"></div>
+      <div class="rankings-list reveal" id="list-spazas"></div>
+    </div>
+
+    <!-- farmers tab -->
+    <div class="tab-panel" id="panel-farmers">
+      <div class="podium-wrap reveal" id="podium-farmers"></div>
+      <div class="rankings-list reveal" id="list-farmers"></div>
+    </div>
+
+    <!-- manufacturers tab -->
+    <div class="tab-panel" id="panel-makers">
+      <div class="podium-wrap reveal" id="podium-makers"></div>
+      <div class="rankings-list reveal" id="list-makers"></div>
+    </div>
+  </div>
+
+  <!-- sidebar -->
+  <div class="sidebar">
+
+    <!-- my rank (shown if logged in) -->
+    <div class="my-rank-card reveal" id="my-rank-card" style="display:none">
+      <h3>Your ranking</h3>
+      <div class="my-rank-name" id="my-rank-name">—</div>
+      <div class="my-rank-row">
+        <div>
+          <div class="my-rank-num" id="my-rank-pos">#—</div>
+          <div class="my-rank-label">Current rank</div>
+        </div>
+        <div class="my-rank-pts">
+          <span class="pts" id="my-rank-pts">—</span>
+          <span class="pl">points this month</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- scoring breakdown -->
+    <div class="side-card reveal">
+      <h3>How points are earned</h3>
+      <div class="score-item">
+        <div class="score-icon">🛒</div>
+        <div class="score-text">Order placed (as buyer)</div>
+        <div class="score-pts">+10</div>
+      </div>
+      <div class="score-item">
+        <div class="score-icon">✅</div>
+        <div class="score-text">Order delivered successfully</div>
+        <div class="score-pts">+15</div>
+      </div>
+      <div class="score-item">
+        <div class="score-icon">⭐</div>
+        <div class="score-text">5-star review received</div>
+        <div class="score-pts">+20</div>
+      </div>
+      <div class="score-item">
+        <div class="score-icon">🎟️</div>
+        <div class="score-text">Pay It Forward voucher sent</div>
+        <div class="score-pts">+25</div>
+      </div>
+      <div class="score-item">
+        <div class="score-icon">🔁</div>
+        <div class="score-text">Returning customer order</div>
+        <div class="score-pts">+5</div>
+      </div>
+    </div>
+
+    <!-- recent activity -->
+    <div class="side-card reveal">
+      <h3>Live activity</h3>
+      <div id="activity-feed"></div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="footer-main">
+    <div class="footer-brand">
+      <a href="granum-home.html" class="footer-logo">Granum</a>
+      <p class="footer-tagline">Connecting spaza shops to farmers & manufacturers.</p>
+      <div class="footer-social">
+        <a href="#" title="Facebook">📘</a>
+        <a href="#" title="Instagram">📸</a>
+        <a href="#" title="WhatsApp">💬</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Shop</h4>
+      <a href="granum-shop.html">Browse Products</a>
+      <a href="granum-cart.html">My Cart</a>
+      <a href="granum-vouchers.html">Gift Vouchers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="granum-about.html">About Us</a>
+      <a href="granum-howitworks.html">How It Works</a>
+      <a href="granum-leaderboard.html">Leaderboard</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="granum-contact.html">Contact Us</a>
+      <a href="#">FAQs</a>
+      <a href="#">Delivery Info</a>
+    </div>
+    <div class="footer-col footer-newsletter">
+      <h4>Stay Updated</h4>
+      <p>Get the latest deals and updates.</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Your email" />
+        <button>Subscribe</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Granum. All rights reserved.</p>
+    <div class="footer-legal">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── leaderboard data ──────────────────────────────────────────
+  const data = {
+    month: {
+      spazas: [
+        { id:'s1', name:"Thabo's Corner Shop",     area:"Soweto, Gauteng",         icon:"🛒", type:"spaza",  orders:47, score:685, trend:+3,  badge:"Top buyer",   verified:true  },
+        { id:'s2', name:"Mama Rose's Spaza",        area:"Khayelitsha, W. Cape",    icon:"🏪", type:"spaza",  orders:32, score:512, trend:+1,  badge:"Community star", verified:true  },
+        { id:'s3', name:"Speedway Groceries",       area:"Langa, W. Cape",          icon:"⚡", type:"spaza",  orders:28, score:441, trend:-1,  badge:null,           verified:false },
+        { id:'s4', name:"Nkosi Family Store",       area:"Mitchells Plain, W. Cape",icon:"🏡", type:"spaza",  orders:21, score:378, trend:0,   badge:null,           verified:false },
+        { id:'s5', name:"Unity Mini Mart",          area:"Gugulethu, W. Cape",      icon:"🤝", type:"spaza",  orders:17, score:295, trend:+2,  badge:"Rising star",  verified:true  },
+        { id:'s6', name:"Sipho's General",          area:"Soweto, Gauteng",         icon:"🛍️",type:"spaza",  orders:14, score:241, trend:-1,  badge:null,           verified:false },
+        { id:'s7', name:"Cape Flats Corner",        area:"Cape Town, W. Cape",      icon:"🌊", type:"spaza",  orders:11, score:198, trend:+4,  badge:"New entry",    verified:true  },
+        { id:'s8', name:"Mandla's Quick Stop",      area:"Tembisa, Gauteng",        icon:"🚀", type:"spaza",  orders:9,  score:163, trend:+1,  badge:null,           verified:false },
+        { id:'s9', name:"Durban Street Spaza",      area:"Umlazi, KZN",             icon:"🌴", type:"spaza",  orders:6,  score:97,  trend:0,   badge:null,           verified:false },
+        { id:'s10',name:"Rainbow Tuck Shop",        area:"Pretoria, Gauteng",       icon:"🌈", type:"spaza",  orders:5,  score:88,  trend:+2,  badge:"New entry",    verified:false },
+      ],
+      farmers: [
+        { id:'f1', name:"Nomsa's Farm",             area:"Cape Town, W. Cape",      icon:"🍅", type:"farmer", orders:23, score:740, trend:+2,  badge:"Top supplier", verified:true  },
+        { id:'f2', name:"Green Valley Farms",       area:"Rustenburg, N. West",     icon:"🧅", type:"farmer", orders:19, score:614, trend:0,   badge:null,           verified:true  },
+        { id:'f3', name:"Sunrise Orchards",         area:"Stellenbosch, W. Cape",   icon:"🍋", type:"farmer", orders:16, score:523, trend:+1,  badge:"5-star rated", verified:true  },
+        { id:'f4', name:"Bergvlei Dairy",           area:"Cape Town, W. Cape",      icon:"🐄", type:"farmer", orders:14, score:468, trend:-1,  badge:null,           verified:true  },
+        { id:'f5', name:"Zulu Fresh Co.",           area:"Durban, KZN",             icon:"🌿", type:"farmer", orders:11, score:389, trend:+3,  badge:"Rising star",  verified:false },
+        { id:'f6', name:"Mpho's Market Garden",     area:"Pretoria, Gauteng",       icon:"🥦", type:"farmer", orders:9,  score:301, trend:+5,  badge:"New entry",    verified:true  },
+        { id:'f7', name:"Happy Hens",               area:"Tzaneen, Limpopo",        icon:"🥚", type:"farmer", orders:8,  score:278, trend:0,   badge:null,           verified:true  },
+        { id:'f8', name:"Highland Farms",           area:"Harrismith, Free State",  icon:"🥔", type:"farmer", orders:6,  score:198, trend:-2,  badge:null,           verified:false },
+      ],
+      makers: [
+        { id:'m1', name:"Soweto Bakery",            area:"Soweto, Gauteng",         icon:"🍞", type:"maker",  orders:60, score:890, trend:0,   badge:"Top supplier", verified:true  },
+        { id:'m2', name:"Clover Direct",            area:"Pinetown, KZN",           icon:"🥛", type:"maker",  orders:41, score:672, trend:+1,  badge:"5-star rated", verified:true  },
+        { id:'m3', name:"Ace Milling",              area:"Ekurhuleni, Gauteng",     icon:"🌽", type:"maker",  orders:34, score:551, trend:-1,  badge:null,           verified:true  },
+        { id:'m4', name:"Cape Spice House",         area:"Cape Town, W. Cape",      icon:"🌶️",type:"maker",  orders:28, score:489, trend:+4,  badge:"Rising star",  verified:false },
+        { id:'m5', name:"Golden Grain Mills",       area:"Bloemfontein, Free State",icon:"🌾", type:"maker",  orders:19, score:334, trend:0,   badge:null,           verified:true  },
+        { id:'m6', name:"Sunflower Co-op",          area:"Nelspruit, Mpumalanga",   icon:"🫒", type:"maker",  orders:12, score:218, trend:-1,  badge:null,           verified:true  },
+      ],
+    },
+  };
+
+  // week and alltime are slight variations for demo
+  data.week    = JSON.parse(JSON.stringify(data.month));
+  data.alltime = JSON.parse(JSON.stringify(data.month));
+
+  // week: shuffle scores to feel different
+  ['spazas','farmers','makers'].forEach(cat => {
+    data.week[cat].forEach(e => { e.score = Math.round(e.score * 0.28); e.orders = Math.round(e.orders * 0.28); });
+    data.alltime[cat].forEach(e => { e.score = Math.round(e.score * 8.4); e.orders = Math.round(e.orders * 8.4); });
+  });
+
+  // ── recent activity feed ──────────────────────────────────────
+  const ACTIVITY = [
+    { text:"Thabos Corner Shop placed a new order", time:"2 mins ago", dot:"green" },
+    { text:"Annas Farm received a 5-star review", time:"14 mins ago", dot:"green" },
+    { text:"Soweto Bakery dispatched a delivery", time:"31 mins ago", dot:"green" },
+    { text:"Aishas Mini Mart joined the platform", time:"1 hr ago", dot:"green" },
+    { text:"Mikes Spaza fulfilled 3 orders", time:"2 hrs ago", dot:"green" },
+    { text:"Fatima Grocers posted a new product", time:"3 hrs ago", dot:"green" },
+    { text:"Piet Groenteboer received a bulk order", time:"5 mins ago", dot:"green" },
+    { text:"Siphos Supplies earned 25 points", time:"8 mins ago", dot:"green" },
+    { text:"Ace Milling dispatched flour to retailers", time:"12 mins ago", dot:"green" },
+    { text:"Nomsa General got a new 5-star review", time:"15 mins ago", dot:"green" },
+    { text:"Johans Convenience placed an order", time:"18 mins ago", dot:"green" },
+    { text:"Zaneles Tuck received a voucher", time:"22 mins ago", dot:"green" },
+    { text:"Clover Dairy fulfilled milk order", time:"25 mins ago", dot:"green" },
+    { text:"Davids Deli joined the platform", time:"28 mins ago", dot:"green" },
+    { text:"Leratos Market placed bulk order", time:"32 mins ago", dot:"green" },
+    { text:"Kabelos Shop received delivery", time:"35 mins ago", dot:"green" },
+  ];
+
+  // ── state ─────────────────────────────────────────────────────
+  let activePeriod = 'month';
+  let activeTab    = 'spazas';
+  const API = 'http://localhost:3000';
+  
+  // Map tab to role for API
+  const roleMap = { spazas: 'spaza_owner', farmers: 'farmer', makers: 'manufacturer' };
+  
+  // Load real leaderboard data from API
+  async function loadLeaderboardFromAPI(role) {
+    try {
+      const res = await fetch(`${API}/fsm/leaderboard/${role}?period=${activePeriod}`);
+      const data = await res.json();
+      return data.leaderboard || [];
+    } catch (err) {
+      console.error('Failed to load leaderboard:', err);
+      return [];
+    }
+  }
+  
+  // Convert API data to display format
+  function convertToDisplayFormat(apiData, type) {
+    const icons = { spaza_owner: '🏪', farmer: '👨🏾‍🌾', manufacturer: '🏭' };
+    const typeToApi = { spazas: 'spaza_owner', farmers: 'farmer', makers: 'manufacturer' };
+    const apiType = typeToApi[type] || type;
+    return apiData.map((e, i) => ({
+      id: e.id,
+      name: e.name,
+      area: e.area,
+      type: type, // This matches the tab name: spazas, farmers, makers
+      apiType: apiType, // This is the actual role
+      icon: icons[apiType] || '📦',
+      orders: e.orders,
+      score: e.orders * 100, // Use orders as score
+      customers: e.customers,
+      trend: e.trend,
+      badge: e.badge,
+      verified: e.verified
+    }));
+  }
+
+  // ── period switch ─────────────────────────────────────────────
+  function setPeriod(period, el) {
+    activePeriod = period;
+    document.querySelectorAll('.period-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    renderAll();
+    // update strip stats for flavour
+    const multipliers = { month:1, week:.28, alltime:8.4 };
+    const m = multipliers[period];
+    document.getElementById('stat-orders').textContent = Math.round(1284 * m).toLocaleString();
+    document.getElementById('stat-value').textContent  = 'R' + Math.round(284 * m) + 'k';
+  }
+
+  // ── tab switch ────────────────────────────────────────────────
+  function switchTab(tab, el) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+  }
+
+  // ── podium builder ────────────────────────────────────────────
+  function buildPodium(entries) {
+    if (entries.length < 3) return '';
+    const top3 = entries.slice(0, 3);
+    const medals  = ['🥇','🥈','🥉'];
+    const classes = ['gold','silver','bronze'];
+    const labels  = ['1st place','2nd place','3rd place'];
+
+    // display order: silver | gold | bronze
+    const displayOrder = [1, 0, 2];
+
+    return `<div class="podium">` +
+      displayOrder.map(i => {
+        const e = top3[i];
+        return `
+          <div class="podium-card ${classes[i]}" onclick="goToProfile('${e.id}','${e.type}')">
+            <span class="podium-medal">${medals[i]}</span>
+            <span class="podium-rank">${labels[i]}</span>
+            <span class="podium-name">${e.name}</span>
+            <span class="podium-area">${e.area}</span>
+            <span class="podium-score">${e.score.toLocaleString()}</span>
+            <div class="podium-bar"></div>
+          </div>`;
+      }).join('') +
+    `</div>`;
+  }
+
+  // ── rank list builder ─────────────────────────────────────────
+  function buildList(entries) {
+    const max = entries[0]?.score || 1;
+    return entries.map((e, i) => {
+      const rank   = i + 1;
+      const rankCls= rank <= 3 ? ` rank-${rank}` : '';
+      const pct    = Math.round((e.score / max) * 100);
+      const avatarCls = e.type === 'spazas' || e.type === 'spaza_owner' ? 'spaza' : e.type === 'farmers' || e.type === 'farmer' ? 'farmer' : 'maker';
+      // Map type for profile URL
+      const profileType = e.type === 'makers' || e.type === 'manufacturer' ? 'manufacturer' : 
+                     e.type === 'farmers' || e.type === 'farmer' ? 'farmer' : 'spaza';
+      const trendHtml = e.trend > 0
+        ? `<span class="rank-trend up">▲ ${e.trend}</span>`
+        : e.trend < 0
+        ? `<span class="rank-trend down">▼ ${Math.abs(e.trend)}</span>`
+        : `<span class="rank-trend same">—</span>`;
+
+      return `
+        <a class="rank-card${rankCls}" href="granum-profile.html?id=${e.id}&type=${profileType}" onclick="void(0)">
+          <div class="rank-num">${rank}</div>
+          <div class="rank-avatar ${avatarCls}">${e.icon}</div>
+          <div class="rank-info">
+            <div class="rank-name">${e.name}</div>
+            <div class="rank-meta">
+              <span>${e.area}</span>
+              ${e.badge ? `<span class="rank-badge ${e.type === 'farmers' || e.type === 'farmer' ? 'brown' : ''}">${e.badge}</span>` : ''}
+              ${e.verified ? `<span class="rank-badge">✓ Verified</span>` : ''}
+            </div>
+          </div>
+          <div class="rank-right">
+            <span class="rank-score">${e.score.toLocaleString()}</span>
+            <span class="rank-score-label">${e.orders} orders</span>
+            <div class="rank-bar-wrap">
+              <div class="rank-bar"><div class="rank-bar-fill" data-pct="${pct}" style="width:0%"></div></div>
+            </div>
+            ${trendHtml}
+          </div>
+        </a>`;
+    }).join('');
+  }
+
+  // ── render ────────────────────────────────────────────────────
+  async function renderAll() {
+    // Load from API
+    const spazaData = await loadLeaderboardFromAPI('spaza_owner');
+    const farmerData = await loadLeaderboardFromAPI('farmer');
+    const makerData = await loadLeaderboardFromAPI('manufacturer');
+    
+    const d = {
+      spazas: convertToDisplayFormat(spazaData, 'spaza'),
+      farmers: convertToDisplayFormat(farmerData, 'farmer'),
+      makers: convertToDisplayFormat(makerData, 'maker')
+    };
+    
+    ['spazas','farmers','makers'].forEach(cat => {
+      const entries = [...d[cat]].sort((a,b) => b.score - a.score);
+      document.getElementById('podium-' + cat).innerHTML = buildPodium(entries);
+      document.getElementById('list-'   + cat).innerHTML = buildList(entries);
+    });
+
+    // animate bars after paint
+    setTimeout(() => {
+      document.querySelectorAll('.rank-bar-fill').forEach(el => {
+        el.style.width = el.dataset.pct + '%';
+      });
+    }, 100);
+  }
+
+  // ── activity feed ─────────────────────────────────────────────
+  function renderActivity() {
+    document.getElementById('activity-feed').innerHTML =
+      ACTIVITY.map(a => `
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div>
+            <div class="activity-text">${a.text}</div>
+            <span class="activity-time">${a.time}</span>
+          </div>
+        </div>`).join('');
+  }
+
+  // simulate live feed — rotate newest activity every 6s
+  let activityIdx = 0;
+  const LIVE_EVENTS = [
+    // Spaza shop activities (40+)
+    "placed a new bulk order", "received a delivery", "earned 25 points", "fulfilled an order",
+    "posted a new product", "got a 5-star review", "hit a monthly record", "joined the platform",
+    "sent a Pay It Forward voucher", "redeemed a voucher", "updated their shop profile",
+    "added 10 new products", "reached 50 orders this month", "received a repeat customer",
+    "achieved Top Performer status", "shared their profile", "completed a delivery",
+    "restocked popular items", "added seasonal specials", "hit 100 orders milestone",
+    "earned Verified badge", "got featured on homepage", "reached 5-star rating",
+    "started offer deals", "added discount bundles", "shared profile link",
+    "completed 200th order", "earned Loyalty badge", "reached R10k sales",
+    "added organic products", "started catering service", "expanded delivery area",
+    "added WhatsApp ordering", "launched promotion", "shared special offer",
+    "received bulk order", "achieved Super Seller status", "reached 500 points",
+    // Farmer activities (40+)
+    "dispatched fresh produce", "harvested new crops", "received a wholesale order",
+    "added seasonal vegetables", "got a quality badge", "reached 100kg sales",
+    "fulfilled export order", "received payment", "updated farm location",
+    "earned Organic badge", "dispatched to Clover Dairy", "received bulk seeds",
+    "launched new produce", "added baby veggies", "reached farmer market status",
+    "got export certification", "dispatched to Pick n Pay", "earned Quality badge",
+    "harvested organic tomatoes", "started farmers market", "reached sustainability goal",
+    "added greenhouse crops", "dispatched to Spar", "received tractor delivery",
+    "earned Premium badge", "started subscription box", "reached 50 deliveries",
+    "added herb garden", "dispatched to Woolies", "earned Fresh badge",
+    "started home delivery", "reached eco-friendly status", "added exotic vegetables",
+    "dispatched to Food Lover's", "earned Green badge", "started wholesale division",
+    "added value pack produce", "dispatched to Checkers", "reached farm fresh status",
+    // Manufacturer activities (40+)
+    "baked fresh bread", "fulfilled retail order", "dispatched flour delivery",
+    "got ISO certification", "reached production milestone", "received supply order",
+    "packaged dairy products", "delivered to distributors", "launched new product line",
+    "upgraded equipment", "received raw materials", "completed quality check",
+    "baked cake specials", "dispatched to Shoprite", "reached bakery milestone",
+    "earned Halaal certification", "started franchise expansion", "dispatched to Pick n Pay",
+    "added vegan options", "reached sales target", "dispatched to Woolworths",
+    "launched family pack", "earned SMME badge", "started online store",
+    "added festive specials", "reached distribution goal", "dispatched to Spar",
+    "started export division", "earned Premium Supplier status", "received machinery",
+    "added bulk options", "reached manufacturing target", "dispatched to Food Lover's",
+    "launched combo deals", "earned Quality Assurance badge", "started catering division",
+    "added seasonal menu", "reached delivery zone milestone", "dispatched to Checkers",
+    "started export licensing", "earned Heritage badge", "reached anniversary",
+  ];
+  
+  // Shop names - use actual database names
+  const SPAZA_NAMES = [
+    "Thabos Corner Shop", "Aishas Mini Mart", "Mikes Spaza", "Fatima Grocers", "Siphos Supplies",
+    "Nomsa General", "Johans Convenience", "Zaneles Tuck", "Davids Deli", "Leratos Market",
+    "Kabelos Shop", "Amah Trading", "Seths Store", "Priya provisions", "Thulis Spaza",
+    "Luckys Corner", "Final Test Shop", "Spaza Shop", "Spaza Shop", "Spaza Shop"
+  ];
+  const FARMER_NAMES = [
+    "Piet Groenteboer", "Annas Farm", "Jan Boerdery", "Maria Fresh Produce", "Koos Agri",
+    "Elsies Kleinplaas", "Willem se Plot", "Sophie se Tuin", "Farmer Shop", "Farmer Shop"
+  ];
+  const MAKER_NAMES = [
+    "Soweto Bakery", "Clover Dairy", "Ace Milling", "Fresh Pack Co", "Quality Foods",
+    "SnackMasters", "Manufacturer Shop", "Manufacturer Shop"
+  ];
+  
+  // Random shop picker
+  function getRandomShop(type) {
+    const names = type === 'spaza' ? SPAZA_NAMES : type === 'farmer' ? FARMER_NAMES : MAKER_NAMES;
+    return names[Math.floor(Math.random() * names.length)];
+  }
+  
+  function tickActivity() {
+    const feed = document.getElementById('activity-feed');
+    if (!feed) return;
+    
+    // Pick random shop type and name
+    const types = ['spaza', 'farmer', 'maker'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const shopName = getRandomShop(type);
+    const event = LIVE_EVENTS[Math.floor(Math.random() * LIVE_EVENTS.length)];
+    
+    activityIdx = (activityIdx + 1) % LIVE_EVENTS.length;
+    const newItem = document.createElement('div');
+    newItem.className = 'activity-item';
+    newItem.style.cssText = 'opacity:0;transform:translateY(-8px);transition:all .3s';
+    newItem.innerHTML = `
+      <div class="activity-dot"></div>
+      <div>
+        <div class="activity-text">${shopName} ${event}</div>
+        <span class="activity-time">Just now</span>
+      </div>`;
+    feed.insertBefore(newItem, feed.firstChild);
+    setTimeout(() => { newItem.style.opacity = '1'; newItem.style.transform = 'none'; }, 50);
+    // remove oldest if more than 6
+    while (feed.children.length > 6) feed.removeChild(feed.lastChild);
+    // update timestamps
+    feed.querySelectorAll('.activity-time').forEach((el, i) => {
+      const mins = [0, 2, 14, 31, 62, 183];
+      el.textContent = i === 0 ? 'Just now' : `${mins[i] || i * 30} mins ago`;
+    });
+  }
+
+  // ── my rank (if logged in) ────────────────────────────────────
+  function renderMyRank() {
+    const user = window.granumAuth?.getUser();
+    const card = document.getElementById('my-rank-card');
+    if (!user || !card) return;
+
+    // mock rank for logged-in user — in production this comes from the API
+    const mockRanks = { spaza_owner:4, farmer:3, manufacturer:2, driver:null };
+    const pos = mockRanks[user.role];
+    if (!pos) return;
+
+    card.style.display = '';
+    document.getElementById('my-rank-name').textContent = user.first_name + '\'s shop';
+    document.getElementById('my-rank-pos').textContent  = '#' + pos;
+    document.getElementById('my-rank-pts').textContent  = (378 - (pos * 20)).toLocaleString();
+  }
+
+  // ── profile navigation ────────────────────────────────────────
+  function goToProfile(id, type) {
+    // Map tab types to profile page types
+    const typeMap = { 
+      spazas: 'spaza', 
+      farmers: 'farmer', 
+      makers: 'manufacturer',
+      // Also handle API role types
+      spaza_owner: 'spaza',
+      farmer: 'farmer', 
+      manufacturer: 'manufacturer'
+    };
+    const profileType = typeMap[type] || type;
+    window.location.href = `granum-profile.html?id=${id}&type=${profileType}`;
+  }
+
+  // ── reveal ────────────────────────────────────────────────────
+  function initReveal() {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const siblings = Array.from(e.target.parentElement.children);
+          const delay = Math.min(siblings.indexOf(e.target) * 70, 280);
+          setTimeout(() => e.target.classList.add('up'), delay);
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el => obs.observe(el));
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  // ── init ──────────────────────────────────────────────────────
+  renderAll();
+  renderActivity();
+  initReveal();
+
+  // slight delay before showing my rank (auth.js needs to load)
+  setTimeout(() => {
+    renderMyRank();
+  }, 300);
+
+  // live activity ticker every 8 seconds
+  setInterval(tickActivity, 8000);
+</script>
+</body>
+</html>
