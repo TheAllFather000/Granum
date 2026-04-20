@@ -201,7 +201,7 @@ router.patch('/products/:id', authenticate, validate('updateProduct'), async (re
 
     const { rows: [updated] } = await query(
       `UPDATE products SET ${setSQL}, updated_at = NOW()
-       WHERE id = $${values.length} RETURNING *`,
+       WHERE id = $${fields.length + 1} RETURNING *`,
       values
     );
     res.json({ product: updated });
