@@ -314,6 +314,10 @@ router.post('/orders', authenticate, validate('placeOrder'), async (req, res, ne
 
       // deduct voucher balance
       if (voucherId) {
+        const { rows: [voucher] } = await client.query(
+          `SELECT recipient_phone FROM vouchers WHERE id = $1`,
+          [voucherId]
+        );
         await client.query(
           `UPDATE vouchers SET
              balance_cents = balance_cents - $1,
@@ -326,6 +330,13 @@ router.post('/orders', authenticate, validate('placeOrder'), async (req, res, ne
            VALUES ($1, $2, $3)`,
           [voucherId, newOrder.id, discountCents]
         );
+        // Add to recipient's voucher balance
+        if (voucher[0]?.recipient_phone) {
+          await client.query(
+            `UPDATE users SET voucher_balance_cents = COALESCE(voucher_balance_cents, 0) + $1 WHERE phone = $2`,
+            [discountCents, voucher[0].recipient_phone]
+          );
+        }
       }
 
       return { order: newOrder, savedItems };
