@@ -282,7 +282,6 @@
           <div class="gen-v-to" id="gen-to">For someone in need</div>
           <div class="gen-v-code" id="gen-code">LH-VOUCHER-XXXXX</div>
           <div class="gen-v-msg" id="gen-msg"></div>
-          <button class="copy-btn" onclick="copyCode()">📋 Copy code</button>
         </div>
         <button class="reset-btn" onclick="resetBuyForm()">Send another voucher</button>
       </div>
@@ -465,8 +464,7 @@
 
   // ── buy voucher ───────────────────────────────────────────────
   async function buyVoucher() {
-    let api = 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
-    if (window.granumAuth?.API) api = window.granumAuth.API;
+    const api = window.granumAuth?.API || window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
     
     const phone = document.getElementById('recip-phone').value.trim();
     const name = document.getElementById('recip-name').value.trim() || '';
@@ -541,8 +539,7 @@
     const code = document.getElementById('redeem-code').value.trim().toUpperCase();
     if (!code) return;
 
-    let api = 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
-    if (window.granumAuth?.API) api = window.granumAuth.API;
+    const api = window.granumAuth?.API || window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
 
     const resultEl = document.getElementById('voucher-result');
     const redeemBtn = document.getElementById('redeem-action-btn');

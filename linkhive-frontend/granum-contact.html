@@ -658,6 +658,7 @@
     btn.classList.add('loading');
     txt.textContent = 'Sending…';
 
+    const api = window.granumAuth?.API || window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
     const formData = {
       name: document.getElementById('inp-name').value,
       phone: document.getElementById('inp-phone').value,
@@ -667,7 +668,7 @@
     };
 
     try {
-      const res = await fetch('https://unhid-untriflingly-georgiann.ngrok-free.dev/fsm/contact', {
+      const res = await fetch(`${api}/fsm/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
