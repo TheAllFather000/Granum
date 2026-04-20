@@ -20,13 +20,14 @@ const PORT = process.env.API_PORT || 3000;
 app.use(helmet());
 
 // ── CORS ───────────────────────────────────────────────────────
-app.use(cors({
-  origin: (process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean)
-         .concat(['http://localhost:5500', 'http://127.0.0.1:5500']),
+const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+const corsOptions = {
+  origin: corsOrigins.includes('*') ? true : corsOrigins.length > 0 ? corsOrigins : ['http://localhost:5500', 'http://127.0.0.1:5500'],
   methods:     ['GET','POST','PATCH','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
+  allowedHeaders: ['Content-Type','Authorization','Cache-Control','Pragma'],
   credentials: true,
-}));
+};
+app.use(cors(corsOptions));
 app.options('*', cors());
 
 // ── Body parsing ───────────────────────────────────────────────
