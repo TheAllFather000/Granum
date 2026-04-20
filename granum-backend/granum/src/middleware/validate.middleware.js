@@ -95,6 +95,7 @@ const schemas = {
     in_stock:     Joi.boolean().optional(),
     stock_qty:    Joi.number().integer().min(0).optional().allow(null),
     bulk_options: Joi.array().optional(),
+    image_url:   Joi.string().uri().optional().allow('', null),
   }),
 
   // ── orders ────────────────────────────────────────────────────
