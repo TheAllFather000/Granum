@@ -949,10 +949,10 @@ function convertProfileToCard(p) {
     try {
       if (debugEl) debugEl.textContent = 'Loading...';
       
-      const API = window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
+      const API_URL = window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
       
       // Fetch all profiles from /fsm endpoint
-      const profilesRes = await fetch(`${API}/fsm/profiles?limit=50`);
+      const profilesRes = await fetch(`${API_URL}/fsm/profiles?limit=50`);
       const profilesData = await profilesRes.json();
       
       if (profilesData.profiles) {
@@ -968,7 +968,7 @@ function convertProfileToCard(p) {
       }
       
       // Fetch all products
-      const productsRes = await fetch(`${API}/fsm/products?limit=100`);
+      const productsRes = await fetch(`${API_URL}/fsm/products?limit=100`);
       const productsData = await productsRes.json();
       
       if (productsData.products) {
