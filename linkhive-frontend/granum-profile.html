@@ -908,7 +908,7 @@
     }
     
     try {
-      const res = await window.granumAuth.apiFetch('/fsm/voucher-balance');
+      const res = await window.granumAuth.apiFetch('/fsm/voucher-balance?_t=' + Date.now());
       const data = await res.json();
       console.log('[Profile] Voucher balance response:', data);
       const balance = data.voucher_balance || 0;
