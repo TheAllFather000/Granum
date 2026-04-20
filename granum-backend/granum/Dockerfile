@@ -2,12 +2,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# install deps first (layer cache)
 COPY package*.json ./
-RUN npm ci --omit=dev && npm install --save-dev nodemon
+RUN npm ci --omit=dev
 
 COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+ENV NODE_ENV=production
+
+CMD ["sh", "-c", "node src/scripts/migrate.js && node src/app.js"]
