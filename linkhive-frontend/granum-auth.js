@@ -11,7 +11,7 @@
  */
 
 (function () {
-  const API = 'http://localhost:3000'; // change to your deployed URL in production
+  const API = window.GRANUM_API_URL || localStorage.getItem('granum_api_url') || 'http://localhost:3000';
 
   const KEYS = {
     access:  'granum_access_token',
