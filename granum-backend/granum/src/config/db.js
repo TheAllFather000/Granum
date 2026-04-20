@@ -1,15 +1,24 @@
 const { Pool } = require('pg');
 
-const pool = new Pool({
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME     || 'linkhive',
-  user:     process.env.DB_USER     || 'linkhive',
-  password: process.env.DB_PASSWORD || 'linkhive_secret',
-  max:      20,       // max connections in pool
-  idleTimeoutMillis:    30_000,
-  connectionTimeoutMillis: 5_000,
-});
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+  poolConfig = { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } };
+} else {
+  poolConfig = {
+    host:     process.env.DB_HOST     || 'localhost',
+    port:     parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME     || 'linkhive',
+    user:     process.env.DB_USER     || 'linkhive',
+    password: process.env.DB_PASSWORD || 'linkhive_secret',
+  };
+}
+
+poolConfig.max = 20;
+poolConfig.idleTimeoutMillis = 30_000;
+poolConfig.connectionTimeoutMillis = 5_000;
+
+const pool = new Pool(poolConfig);
 
 pool.on('error', (err) => {
   console.error('[DB] Unexpected pool error:', err.message);
