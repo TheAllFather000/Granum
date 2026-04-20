@@ -346,24 +346,10 @@ const PAGES = [
       </div>
       <a href="granum-cart.html?checkout=1" class="submit-btn" style="display:block;text-align:center;margin-top:16px;background:var(--green);color:white;padding:14px;border-radius:12px;text-decoration:none;font-weight:600">Checkout</a>
     `;
+    attachCartListeners();
   }
 
-  // Also attach event listeners after DOM update
-  setTimeout(() => {
-    const drawer = document.getElementById('lh-cart-drawer-content');
-    if (!drawer) return;
-    drawer.querySelectorAll('.cart-item').forEach(item => {
-      const id = item.dataset.id;
-      const decBtn = item.querySelector('.cart-qty-btn[data-action="dec"]');
-      const incBtn = item.querySelector('.cart-qty-btn[data-action="inc"]');
-      const rmBtn = item.querySelector('.cart-remove-btn');
-      if (decBtn) decBtn.onclick = () => window.changeCartQty(id, -1);
-      if (incBtn) incBtn.onclick = () => window.changeCartQty(id, 1);
-      if (rmBtn) rmBtn.onclick = () => window.removeFromCart(id);
-    });
-  }, 50);
-
-  // Cart functions - exposed before any render
+  // Cart functions - exposed immediately
   window.changeCartQty = function(id, delta) {
     let cart = JSON.parse(localStorage.getItem('lh_cart') || '[]');
     const item = cart.find(i => i.id === id);
@@ -388,7 +374,22 @@ const PAGES = [
     localStorage.setItem('lh_cart', JSON.stringify(cart));
     syncBadge();
     renderCartDrawer();
+    attachCartListeners();
   };
+
+  function attachCartListeners() {
+    const drawer = document.getElementById('lh-cart-drawer-content');
+    if (!drawer) return;
+    drawer.querySelectorAll('.cart-item').forEach(item => {
+      const id = item.dataset.id;
+      const decBtn = item.querySelector('.cart-qty-btn[data-action="dec"]');
+      const incBtn = item.querySelector('.cart-qty-btn[data-action="inc"]');
+      const rmBtn = item.querySelector('.cart-remove-btn');
+      if (decBtn) decBtn.onclick = () => window.changeCartQty(id, -1);
+      if (incBtn) incBtn.onclick = () => window.changeCartQty(id, 1);
+      if (rmBtn) rmBtn.onclick = () => window.removeFromCart(id);
+    });
+  }
 
   // cart badge — live from localStorage
   function syncBadge() {
