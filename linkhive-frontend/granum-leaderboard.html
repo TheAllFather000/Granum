@@ -518,7 +518,7 @@
   // ── state ─────────────────────────────────────────────────────
   let activePeriod = 'month';
   let activeTab    = 'spazas';
-  const API = 'http://localhost:3000';
+  const API = window.GRANUM_API_URL || 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
   
   // Map tab to role for API
   const roleMap = { spazas: 'spaza_owner', farmers: 'farmer', makers: 'manufacturer' };

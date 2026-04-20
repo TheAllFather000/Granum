@@ -464,7 +464,7 @@
 
   // ── buy voucher ───────────────────────────────────────────────
   async function buyVoucher() {
-    let api = 'http://localhost:3000';
+    let api = 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
     if (window.granumAuth?.API) api = window.granumAuth.API;
     
     const phone = document.getElementById('recip-phone').value.trim();
@@ -540,7 +540,7 @@
     const code = document.getElementById('redeem-code').value.trim().toUpperCase();
     if (!code) return;
 
-    let api = 'http://localhost:3000';
+    let api = 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
     if (window.granumAuth?.API) api = window.granumAuth.API;
 
     const resultEl = document.getElementById('voucher-result');
