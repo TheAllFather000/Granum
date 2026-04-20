@@ -909,9 +909,11 @@
     
     try {
       const res = await window.granumAuth.apiFetch('/fsm/voucher-balance?_t=' + Date.now());
+      console.log('[Profile] Voucher balance response status:', res.status);
       const data = await res.json();
       console.log('[Profile] Voucher balance response:', data);
-      const balance = data.voucher_balance || 0;
+      console.log('[Profile] User from granumAuth:', window.granumAuth?.getUser?.());
+      const balance = data.voucher_balance_cents ? data.voucher_balance_cents / 100 : (data.voucher_balance || 0);
       const el = document.getElementById('voucher-balance-display');
       el.textContent = `R${balance.toFixed(2)}`;
       card.style.display = 'block';
