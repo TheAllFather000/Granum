@@ -1,219 +1,138 @@
-# Linkhive API
+# Granum - B2B Township Marketplace
 
-B2B township grocery marketplace backend — Node.js + Express + PostgreSQL + Redis + Twilio.
+Spaza shop owners connecting with farmers and manufacturers in South Africa.
 
 ---
 
 ## Stack
 
-| Layer       | Technology              |
-|-------------|-------------------------|
-| Runtime     | Node.js 20              |
-| Framework   | Express 4               |
-| Database    | PostgreSQL 16 (Docker)  |
-| Cache / OTP | Redis 7 (Docker)        |
-| SMS         | Twilio                  |
-| Auth        | JWT + OTP               |
-| Container   | Docker Compose          |
+| Layer     | Technology           |
+|-----------|----------------------|
+| Backend   | Node.js + Express    |
+| Database  | PostgreSQL (Docker)  |
+| Cache/OTP | Redis (Docker)       |
+| SMS       | Textbee (Android)   |
+| Auth      | JWT + OTP            |
+| Frontend | Vanilla HTML/JS     |
 
 ---
 
-## Quick start
+## Run Locally (Recommended)
 
-### 1. Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- Node.js 20+ (only needed if you want to run outside Docker)
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-### 2. Clone and configure
+### 1. Start Backend
 
 ```bash
-# copy the env template
-cp .env.example .env
+cd granum-backend/granum
+docker compose up -d
 ```
 
-Open `.env` and fill in:
-- `JWT_SECRET` — any long random string (32+ chars)
-- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` — from [twilio.com](https://twilio.com) (free trial works fine)
-- Leave DB/Redis values as-is for local dev
+### 2. Start Frontend
 
-### 3. Start everything
+Open frontend folder in VS Code, use Live Server extension, or:
 
 ```bash
-docker compose up --build
+# If you have Python installed
+cd linkhive-frontend
+python -m http.server 5500
 ```
 
-That's it. Docker will:
-1. Start PostgreSQL and wait for it to be healthy
-2. Start Redis
-3. Run the database migration (`init.sql`)
-4. Start the API with hot-reload
+Then open http://localhost:5500 in your browser.
 
-### 4. Verify it's working
+---
+
+## Quick Test - No Docker Needed
+
+If you only want to test the frontend static pages:
 
 ```bash
-curl http://localhost:3000/health
+cd linkhive-frontend
+python -m http.server 5500
 ```
 
-Expected response:
-```json
-{
-  "status": "ok",
-  "service": "linkhive-api",
-  "db": "connected"
-}
-```
+Note: Dynamic features (login, profile, orders) won't work without the API running.
 
 ---
 
-## Development (without Docker)
+## Database
+
+The schema is in `granum-backend/granum/migrations/init.sql`.
+
+Products are seeded automatically if the database is empty.
+
+### View Products via API
 
 ```bash
-# install dependencies
-npm install
-
-# make sure Postgres and Redis are running locally, then:
-npm run dev
-```
-
-The API will hot-reload on file changes via nodemon.
-
----
-
-## API Reference
-
-Base URL: `http://localhost:3000`
-
-### Auth
-
-| Method | Endpoint            | Auth     | Description                        |
-|--------|---------------------|----------|------------------------------------|
-| POST   | /auth/otp/request   | —        | Send OTP to phone                  |
-| POST   | /auth/register      | —        | Register with OTP verification     |
-| POST   | /auth/login         | —        | Login via OTP or password          |
-| POST   | /auth/refresh       | —        | Rotate refresh token               |
-| POST   | /auth/logout        | Bearer   | Revoke all tokens                  |
-| GET    | /auth/me            | Bearer   | Get current user + profile         |
-
-### Profiles
-
-| Method | Endpoint                      | Auth     | Description            |
-|--------|-------------------------------|----------|------------------------|
-| GET    | /api/profiles                 | Optional | List profiles          |
-| GET    | /api/profiles/:id             | Optional | Get single profile     |
-| PATCH  | /api/profiles/me              | Bearer   | Update own profile     |
-
-### Products
-
-| Method | Endpoint          | Auth     | Description             |
-|--------|-------------------|----------|-------------------------|
-| GET    | /api/products     | Optional | List products           |
-| POST   | /api/products     | Bearer   | Create product          |
-| PATCH  | /api/products/:id | Bearer   | Update product          |
-| DELETE | /api/products/:id | Bearer   | Delete product          |
-
-### Orders
-
-| Method | Endpoint      | Auth   | Description              |
-|--------|---------------|--------|--------------------------|
-| POST   | /api/orders   | Bearer | Place an order           |
-| GET    | /api/orders   | Bearer | Get my order history     |
-
-### Vouchers
-
-| Method | Endpoint             | Auth   | Description              |
-|--------|----------------------|--------|--------------------------|
-| POST   | /api/vouchers        | Bearer | Buy and send a voucher   |
-| GET    | /api/vouchers/:code  | —      | Check voucher balance    |
-
-### Reviews
-
-| Method | Endpoint                      | Auth   | Description         |
-|--------|-------------------------------|--------|---------------------|
-| POST   | /api/profiles/:id/reviews     | Bearer | Submit a review     |
-| GET    | /api/profiles/:id/reviews     | —      | Get reviews         |
-
----
-
-## Authentication flow
-
-### OTP registration (new user)
-
-```
-1. POST /auth/otp/request  { phone, purpose: "register" }
-   → OTP sent via SMS (logged to console in dev mode)
-
-2. POST /auth/register     { phone, otp, role, first_name, last_name }
-   → Returns { user, tokens: { accessToken, refreshToken } }
-```
-
-### OTP login (returning user)
-
-```
-1. POST /auth/otp/request  { phone, purpose: "login" }
-
-2. POST /auth/login        { phone, otp }
-   → Returns { user, tokens }
-```
-
-### Password login (if password was set)
-
-```
-POST /auth/login  { phone, password }
-→ Returns { user, tokens }
-```
-
-### Using tokens
-
-```
-Authorization: Bearer <accessToken>
-```
-
-Access tokens expire in 7 days. Refresh before expiry:
-
-```
-POST /auth/refresh  { refresh_token: "<refreshToken>" }
-→ Returns new { tokens }
+curl http://localhost:3000/fsm/products
 ```
 
 ---
 
-## Dev tips
+## Project Structure
 
-- **No Twilio?** In development mode the OTP is printed to the Docker/terminal console. You don't need real Twilio credentials to develop locally.
-- **Inspect the DB:** Connect with any Postgres client (TablePlus, DBeaver, psql) at `localhost:5432`, database `linkhive`, user `linkhive`, password `linkhive_secret`
-- **Inspect Redis:** `redis-cli -a redis_secret` or use RedisInsight
+```
+├── granum-backend/granum/     # Backend (Node.js + Express)
+│   ├── docker-compose.yml
+│   ├── src/
+│   │   ├── app.js
+│   │   ├── config/db.js
+│   │   ├── routes/api.routes.js
+│   │   └── services/
+│   └── migrations/init.sql
+│
+├── linkhive-frontend/        # Frontend (Vanilla HTML/CSS/JS)
+│   ├── granum-home.html
+│   ├── granum-shop.html
+│   ├── granum-auth.html
+│   ├── granum-profile.html
+│   └── granum-*.html
+│
+└── README.md
+```
 
 ---
 
-## Project structure
+## API Endpoints
 
+| Endpoint | Description |
+|----------|-------------|
+| GET /fsm/profiles | List shops/farmers |
+| GET /fsm/products | List products |
+| POST /auth/otp/request | Send OTP |
+| POST /auth/register | Register |
+| POST /auth/login | Login |
+| GET /fsm/orders | My orders |
+
+Full API docs in backend source code comments.
+
+---
+
+## Development
+
+To update the backend:
+
+```bash
+cd granum-backend/granum
+docker compose restart api  # Restart after code changes
 ```
-linkhive/
-├── docker-compose.yml
-├── Dockerfile
-├── package.json
-├── .env.example
-├── .gitignore
-├── migrations/
-│   └── init.sql            ← full database schema
-└── src/
-    ├── app.js              ← Express entry point
-    ├── config/
-    │   ├── db.js           ← PostgreSQL pool
-    │   └── redis.js        ← Redis client
-    ├── controllers/
-    │   └── auth.controller.js
-    ├── middleware/
-    │   ├── auth.middleware.js
-    │   ├── validate.middleware.js
-    │   └── error.middleware.js
-    ├── routes/
-    │   ├── auth.routes.js
-    │   └── api.routes.js
-    ├── services/
-    │   ├── auth.service.js ← JWT + refresh tokens
-    │   ├── otp.service.js  ← OTP generate / verify
-    │   └── sms.service.js  ← Twilio wrapper
-    └── scripts/
-        └── migrate.js      ← runs init.sql on startup
+
+To update frontend, just refresh the browser - no restart needed.
+
+---
+
+## Troubleshooting
+
+**Port already in use:**
+```bash
+docker compose down
+docker compose up -d
 ```
+
+**Database connection error:**
+```bash
+docker compose logs api
+```
+
+**Clear local storage in browser:** Dev Tools → Application → Local Storage → Clear
