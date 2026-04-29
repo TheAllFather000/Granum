@@ -10,7 +10,7 @@ const app = express();
 app.use(cors({ 
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'ngrok-skip-browser-warning']
 }));
 app.use(express.json());
 
@@ -18,7 +18,7 @@ app.use(express.json());
 app.options('*', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Origin,Accept');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Origin,Accept,ngrok-skip-browser-warning');
   res.sendStatus(204);
 });
 
