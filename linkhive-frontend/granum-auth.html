@@ -723,6 +723,7 @@
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ phone, purpose: 'login' }),
       });
+      console.log('OTP request to:', `${API}/auth/otp/request`, { phone, purpose: 'login' });
       const data = await res.json();
       if (!res.ok) { showError(data.error || 'Failed to send OTP'); return; }
 
