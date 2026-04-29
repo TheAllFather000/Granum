@@ -91,5 +91,16 @@
     "balance_cents": 5000,
     "status": "active",
     "created_at": "2026-04-29T09:52:36.255Z"
+  },
+  {
+    "id": "77c5cef3-248c-42f0-bb41-c926c2e152cd",
+    "code": "LH-RO7WB",
+    "recipient_phone": "078 377 6253",
+    "sender_name": "",
+    "message": "FF",
+    "initial_cents": 5000,
+    "balance_cents": 5000,
+    "status": "active",
+    "created_at": "2026-04-29T12:33:40.238Z"
   }
 ]
