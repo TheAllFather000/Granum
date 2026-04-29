@@ -189,6 +189,11 @@ app.delete('/fsm/products/:id', (req, res) => {
 });
 
 // Vouchers
+// Get all vouchers
+app.get('/fsm/vouchers', (req, res) => {
+  res.json({ vouchers: load('vouchers') });
+});
+
 app.get('/fsm/vouchers/:code', (req, res) => {
   const { code } = req.params;
   const vouchers = load('vouchers');
