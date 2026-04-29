@@ -197,6 +197,27 @@ app.get('/fsm/vouchers/:code', (req, res) => {
   res.json({ voucher });
 });
 
+// POST /fsm/vouchers - create voucher
+app.post('/fsm/vouchers', (req, res) => {
+  const { recipient_phone, initial_cents, sender_name, message } = req.body;
+  const vouchers = load('vouchers');
+  const code = 'LH-' + Math.random().toString(36).toUpperCase().slice(2, 7);
+  const voucher = {
+    id: uuid(),
+    code,
+    recipient_phone,
+    sender_name,
+    message,
+    initial_cents: initial_cents || 5000,
+    balance_cents: initial_cents || 5000,
+    status: 'active',
+    created_at: new Date().toISOString()
+  };
+  vouchers.push(voucher);
+  save('vouchers', vouchers);
+  res.json({ voucher });
+});
+
 app.get('/fsm/voucher-balance', (req, res) => {
   const users = load('users');
   const user = users[0]; // Simulated
