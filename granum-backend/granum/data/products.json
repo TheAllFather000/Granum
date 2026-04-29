@@ -1,0 +1,22 @@
+[
+  {
+    "id": "9f565db3-635c-4750-876b-5e3ce7391588",
+    "profile_id": "1a1d2de3-6543-4ac8-a81f-c93787e944a1",
+    "name": "Fresh Eggs",
+    "price_cents": 6500,
+    "unit": "30 eggs",
+    "emoji": "🥚",
+    "category": "produce",
+    "stock_qty": 25
+  },
+  {
+    "id": "5e72a184-a7a6-438a-9fd7-cf1aa33bf723",
+    "profile_id": "1a1d2de3-6543-4ac8-a81f-c93787e944a1",
+    "name": "Whole Chicken",
+    "price_cents": 4500,
+    "unit": "1.5kg",
+    "emoji": "🍗",
+    "category": "meat",
+    "stock_qty": 12
+  }
+]

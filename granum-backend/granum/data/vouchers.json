@@ -1,0 +1,18 @@
+[
+  {
+    "id": "06dd2c3c-ae58-411e-bb16-b63f22090580",
+    "code": "LH-VOUCHER-42A9F",
+    "recipient_phone": "0783776253",
+    "initial_cents": 10000,
+    "balance_cents": 10000,
+    "status": "active"
+  },
+  {
+    "id": "b5190097-1d47-49a0-8797-30dfd8c52ecc",
+    "code": "TEST50",
+    "recipient_phone": "0783776253",
+    "initial_cents": 5000,
+    "balance_cents": 5000,
+    "status": "active"
+  }
+]
