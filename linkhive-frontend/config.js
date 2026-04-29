@@ -1,28 +1,4 @@
-window.GRANUM_API_URL = 'https://unhid-untriflingly-georgiann.ngrok-free.dev';
+window.GRANUM_API_URL = 'http://localhost:3000';
 if (!localStorage.getItem('granum_api_url')) {
-  localStorage.setItem('granum_api_url', 'https://unhid-untriflingly-georgiann.ngrok-free.dev');
+  localStorage.setItem('granum_api_url', 'http://localhost:3000');
 }
-
-// ngrok free tunnels return a warning page unless this header is present.
-(function patchFetchForNgrok() {
-  if (typeof window.fetch !== 'function') return;
-  const originalFetch = window.fetch.bind(window);
-
-  window.fetch = function(input, init) {
-    const url = typeof input === 'string' ? input : (input && input.url) || '';
-    const isNgrok = typeof url === 'string' && url.includes('ngrok-free.dev');
-    if (!isNgrok) return originalFetch(input, init);
-
-    const headers = new Headers((init && init.headers) || (typeof input !== 'string' ? input.headers : undefined) || {});
-    if (!headers.has('ngrok-skip-browser-warning')) {
-      headers.set('ngrok-skip-browser-warning', 'true');
-    }
-
-    if (typeof input === 'string') {
-      return originalFetch(input, { ...(init || {}), headers });
-    }
-
-    const request = new Request(input, { ...(init || {}), headers });
-    return originalFetch(request);
-  };
-})();

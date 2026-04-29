@@ -136,3 +136,15 @@ docker compose logs api
 ```
 
 **Clear local storage in browser:** Dev Tools → Application → Local Storage → Clear
+
+---
+
+## Marker Submission Files
+
+For fresh Windows setup instructions, see:
+
+- `../../MARKER_SETUP_WINDOWS.md`
+
+For database snapshot used during marking, see:
+
+- `../../marker_dump.sql`
