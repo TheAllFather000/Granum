@@ -269,5 +269,56 @@ app.patch('/fsm/orders/:id/cancel', (req, res) => {
   res.json({ success: true });
 });
 
+// === RESCUE ===
+// GET rescue/requests
+app.get('/fsm/rescue/requests', (req, res) => {
+  const requests = load('rescue_requests');
+  const status = req.query.status;
+  let filtered = requests;
+  if (status && status !== 'all') {
+    filtered = requests.filter(r => r.status === status);
+  }
+  res.json({ requests: filtered });
+});
+
+// POST rescue/requests
+app.post('/fsm/rescue/requests', (req, res) => {
+  const requests = load('rescue_requests');
+  const request = {
+    id: uuid(),
+    ...req.body,
+    status: 'active',
+    created_at: new Date().toISOString()
+  };
+  requests.push(request);
+  save('rescue_requests', requests);
+  res.json({ request });
+});
+
+// GET rescue/offers
+app.get('/fsm/rescue/offers', (req, res) => {
+  const offers = load('rescue_offers');
+  const status = req.query.status;
+  let filtered = offers;
+  if (status && status !== 'all') {
+    filtered = offers.filter(o => o.status === status);
+  }
+  res.json({ offers: filtered });
+});
+
+// POST rescue/offers
+app.post('/fsm/rescue/offers', (req, res) => {
+  const offers = load('rescue_offers');
+  const offer = {
+    id: uuid(),
+    ...req.body,
+    status: 'active',
+    created_at: new Date().toISOString()
+  };
+  offers.push(offer);
+  save('rescue_offers', offers);
+  res.json({ offer });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`API running on port ${PORT}`));
