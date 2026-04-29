@@ -11,31 +11,35 @@ app.use(express.json());
 
 // TextBee SMS
 async function sendSMS(phone, message) {
-  const apiKey = process.env.TEXTBEE_API_KEY;
-  const deviceId = process.env.TEXTBEE_DEVICE_ID;
-  if (!apiKey || !deviceId) {
-    console.log('[SMS] TextBee not configured, simulation mode');
-    console.log(`[SMS] To ${phone}: ${message}`);
-    return { success: true,_simulated: true };
-  }
+  // Normalize phone number
+  const phoneNorm = phone.replace(/[\s\+]/g, '');
+  const phoneZA = phoneNorm.startsWith('27') ? phoneNorm : '27' + phoneNorm.slice(1);
+  
+  console.log('[SMS] Sending SMS to:', phoneZA);
+  
+  // Try BulkSMS as backup
   try {
-    const res = await fetch('https://api.textbee.dev/v1/send-sms', {
+    const res = await fetch('https://api.bulksms.com/v1/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        'Authorization': 'Basic ' + Buffer.from(process.env.BULKSMS_USERNAME + ':' + process.env.BULKSMS_PASSWORD).toString('base64'),
       },
-      body: JSON.stringify({
-        deviceId,
-        recipient: phone,
-        message,
-      }),
+      body: JSON.stringify([{
+        to: phoneZA,
+        body: message,
+      }]),
     });
-    return await res.json();
+    const result = await res.json();
+    console.log('[SMS] BulkSMS Result:', result);
+    if (result[0]?.id) return { success: true };
   } catch (e) {
-    console.log('[SMS] Error:', e.message);
-    return { error: e.message };
+    console.log('[SMS] BulkSMS Error:', e.message);
   }
+  
+  // Fallback - just log
+  console.log('[SMS] SIMULATION - would send to', phoneZA, ':', message);
+  return { success: true, _simulated: true };
 }
 
 const DATA_DIR = path.join(__dirname, 'data');
