@@ -280,7 +280,7 @@
   </div>
   
   <script>
-    const API = (window.GRANUM_API_URL || 'https://unhid-untriflingly-georgiann.ngrok-free.dev') + '/fsm';
+    const API = (window.GRANUM_API_URL || 'https://unhid-untriflingly-georgiann.ngrok-free.dev') + '';
     
     // Load feed on page load
     document.addEventListener('DOMContentLoaded', loadFeed);
@@ -311,7 +311,7 @@
       
       // Load requests
       try {
-        const res = await fetch(`${API}/rescue/requests?status=active${location !== 'all' ? '&location=' + encodeURIComponent(location) : ''}`);
+        const res = await fetch(`${API}/fsm/rescue/requests?status=active${location !== 'all' ? '&location=' + encodeURIComponent(location) : ''}`);
         const { requests } = await res.json();
         
         const container = document.getElementById('requests-list');
@@ -341,7 +341,7 @@
       
       // Load offers
       try {
-        const res = await fetch(`${API}/rescue/offers?status=active${location !== 'all' ? '&location=' + encodeURIComponent(location) : ''}`);
+        const res = await fetch(`${API}/fsm/rescue/offers?status=active${location !== 'all' ? '&location=' + encodeURIComponent(location) : ''}`);
         const { offers } = await res.json();
         
         const container = document.getElementById('offers-list');
@@ -396,7 +396,7 @@
       };
       
       try {
-        const res = await fetch(`${API}/rescue/requests`, {
+        const res = await fetch(`${API}/fsm/rescue/requests`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -441,7 +441,7 @@
       };
       
       try {
-        const res = await fetch(`${API}/rescue/offers`, {
+        const res = await fetch(`${API}/fsm/rescue/offers`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -470,7 +470,7 @@
       if (!confirm('Mark as resolved? This will hide it from the feed.')) return;
       
       try {
-        const res = await fetch(`${API}/rescue/${type === 'request' ? 'requests' : 'offers'}/${id}`, {
+        const res = await fetch(`${API}/fsm/rescue/${type === 'request' ? 'requests' : 'offers'}/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'resolved' })
