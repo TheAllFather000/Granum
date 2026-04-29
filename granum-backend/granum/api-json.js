@@ -3,11 +3,24 @@ const cors = require('cors');
 const { v4: uuid } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 require('dotenv').config();
 
 const app = express();
-app.use(cors({ origin: '*' }));
+app.use(cors({ 
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
+}));
 app.use(express.json());
+
+// Explicit preflight handler
+app.options('*', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Origin,Accept');
+  res.sendStatus(204);
+});
 
 // TextBee SMS
 async function sendSMS(phone, message) {
@@ -16,6 +29,58 @@ async function sendSMS(phone, message) {
   const phoneZA = phoneNorm.startsWith('27') ? phoneNorm : '27' + phoneNorm.slice(1);
   
   console.log('[SMS] Sending SMS to:', phoneZA);
+
+  const provider = (process.env.SMS_PROVIDER || 'bulksms').toLowerCase();
+  if (provider === 'textbee') {
+    const apiKey = process.env.TEXTBEE_API_KEY;
+    const deviceId = process.env.TEXTBEE_DEVICE_ID;
+    if (!apiKey || !deviceId) {
+      console.log('[SMS] TextBee not configured (missing TEXTBEE_API_KEY or TEXTBEE_DEVICE_ID)');
+    } else {
+      try {
+        const payload = JSON.stringify({
+          recipients: [phoneZA],
+          message,
+        });
+
+        const result = await new Promise((resolve, reject) => {
+          const req = https.request({
+            hostname: 'api.textbee.dev',
+            path: `/api/v1/gateway/devices/${deviceId}/send-sms`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'Content-Length': Buffer.byteLength(payload),
+            },
+          }, (res) => {
+            let responseBody = '';
+            res.on('data', (chunk) => responseBody += chunk);
+            res.on('end', () => {
+              try {
+                const parsed = JSON.parse(responseBody || '{}');
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                  return resolve(parsed);
+                }
+                reject(new Error(`TextBee HTTP ${res.statusCode}: ${responseBody}`));
+              } catch (e) {
+                reject(new Error(`TextBee invalid JSON: ${responseBody}`));
+              }
+            });
+          });
+
+          req.on('error', reject);
+          req.write(payload);
+          req.end();
+        });
+
+        console.log('[SMS] TextBee Result:', result);
+        return { success: true, provider: 'textbee', result };
+      } catch (e) {
+        console.log('[SMS] TextBee Error:', e.message);
+      }
+    }
+  }
   
   // Try BulkSMS as backup
   try {
@@ -82,11 +147,23 @@ function seed() {
 seed();
 
 // Auth
+function normPhone(phone) {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('27')) return digits;
+  if (digits.startsWith('0')) return '27' + digits.slice(1);
+  return '27' + digits;
+}
+
 app.post('/auth/otp/request', async (req, res) => {
   const { phone, purpose } = req.body;
+  console.log('[OTP] Request:', phone, purpose);
+  const phoneNorm = normPhone(phone);
+  console.log('[OTP] Normalized:', phoneNorm);
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const users = load('users');
-  const user = users.find(u => u.phone === phone);
+  console.log('[OTP] Users:', users.map(u => u.phone));
+  const user = users.find(u => normPhone(u.phone) === phoneNorm);
+  console.log('[OTP] Found user:', user);
   
   if (purpose === 'register' && !user) {
     await sendSMS(phone, `Your Granum verification code is: ${otp}`);
