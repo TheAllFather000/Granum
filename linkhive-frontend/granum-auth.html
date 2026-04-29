@@ -713,6 +713,7 @@
 
     const phone = normPhone(raw);
     state.phone = phone;
+    console.log('sendLoginOTP called', phone);
 
     setLoading('login-otp-btn', true);
     clearError();
