@@ -3,10 +3,40 @@ const cors = require('cors');
 const { v4: uuid } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+
+// TextBee SMS
+async function sendSMS(phone, message) {
+  const apiKey = process.env.TEXTBEE_API_KEY;
+  const deviceId = process.env.TEXTBEE_DEVICE_ID;
+  if (!apiKey || !deviceId) {
+    console.log('[SMS] TextBee not configured, simulation mode');
+    console.log(`[SMS] To ${phone}: ${message}`);
+    return { success: true,_simulated: true };
+  }
+  try {
+    const res = await fetch('https://api.textbee.dev/v1/send-sms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        deviceId,
+        recipient: phone,
+        message,
+      }),
+    });
+    return await res.json();
+  } catch (e) {
+    console.log('[SMS] Error:', e.message);
+    return { error: e.message };
+  }
+}
 
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -48,9 +78,26 @@ function seed() {
 seed();
 
 // Auth
-app.post('/auth/otp/request', (req, res) => {
-  const { phone } = req.body;
-  res.json({ message: 'OTP sent (simulated)' });
+app.post('/auth/otp/request', async (req, res) => {
+  const { phone, purpose } = req.body;
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const users = load('users');
+  const user = users.find(u => u.phone === phone);
+  
+  if (purpose === 'register' && !user) {
+    await sendSMS(phone, `Your Granum verification code is: ${otp}`);
+  } else if (user) {
+    await sendSMS(phone, `Your Granum login code is: ${otp}`);
+  } else {
+    return res.status(404).json({ error: 'No account found' });
+  }
+  
+  // Store OTP temporarily (in production use Redis)
+  const otpStore = load('otp_temp') || [];
+  otpStore.push({ phone, otp, created: Date.now() });
+  save('otp_temp', otpStore.slice(-100)); // Keep last 100
+  
+  res.json({ message: 'OTP sent', _otp: otp }); // Remove _otp in production
 });
 
 app.post('/auth/register', (req, res) => {
